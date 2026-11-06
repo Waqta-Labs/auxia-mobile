@@ -5,6 +5,8 @@
     <!-- GPS of the SOS report and of the delivery. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- QR of the delivery package, photos of evidence and ID card. -->
+    <uses-permission android:name="android.permission.CAMERA" />
     <!-- 5 second audio of the emergency detail. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Haptic confirmation of the SOS, the QR scan and the blockchain seal. -->
