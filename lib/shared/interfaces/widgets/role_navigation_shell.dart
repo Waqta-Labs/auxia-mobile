@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'connectivity_badge.dart';
+
 /// One entry of the bottom navigation.
 class RoleDestination {
   const RoleDestination({
@@ -30,7 +32,17 @@ class RoleNavigationShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: shell,
+      body: Stack(
+        children: [
+          shell,
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(bottom: false, child: SyncProgressBar()),
+          ),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: shell.currentIndex,
         onDestinationSelected: (index) =>
