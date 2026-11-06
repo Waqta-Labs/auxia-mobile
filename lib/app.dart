@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/localization/locale_cubit.dart';
+import 'core/sync/sync_cubit.dart';
 import 'core/theme/app_theme.dart';
 import 'identityaccess/interfaces/profile_cubit.dart';
 import 'l10n/generated/app_localizations.dart';
@@ -15,11 +16,13 @@ class AuxiaApp extends StatelessWidget {
     required this.router,
     required this.localeCubit,
     required this.profileCubit,
+    required this.syncCubit,
   });
 
   final GoRouter router;
   final LocaleCubit localeCubit;
   final ProfileCubit profileCubit;
+  final SyncCubit syncCubit;
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +30,7 @@ class AuxiaApp extends StatelessWidget {
       providers: [
         BlocProvider.value(value: localeCubit),
         BlocProvider.value(value: profileCubit),
+        BlocProvider.value(value: syncCubit),
       ],
       child: BlocBuilder<LocaleCubit, Locale>(
         builder: (context, locale) => MaterialApp.router(

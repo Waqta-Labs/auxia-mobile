@@ -11,8 +11,13 @@ import '../../identityaccess/infrastructure/persistence/secure_profile_repositor
 import '../../identityaccess/infrastructure/persistence/secure_session_repository.dart';
 import '../../identityaccess/interfaces/profile_cubit.dart';
 import '../config/app_config.dart';
+import '../connectivity/connectivity_monitor.dart';
+import '../database/app_database.dart';
 import '../localization/locale_cubit.dart';
 import '../network/api_client.dart';
+import '../sync/outbox_repository.dart';
+import '../sync/sync_cubit.dart';
+import '../sync/sync_engine.dart';
 
 /// Global service locator. Only `main.dart` and the router read from it;
 /// classes receive their dependencies by constructor.
@@ -20,11 +25,25 @@ final GetIt getIt = GetIt.instance;
 
 Future<void> configureDependencies({AppConfig? config}) async {
   final appConfig = config ?? AppConfig.fromEnvironment();
+  const storage = FlutterSecureStorage();
+  final database = await AppDatabase.openEncrypted(storage: storage);
 
   getIt
     ..registerSingleton<AppConfig>(appConfig)
     ..registerSingleton<LocaleCubit>(LocaleCubit())
-    ..registerSingleton<FlutterSecureStorage>(const FlutterSecureStorage())
+    ..registerSingleton<FlutterSecureStorage>(storage)
+    // Offline-first: encrypted database, outbox and synchronization.
+    ..registerSingleton<AppDatabase>(database)
+    ..registerSingleton<OutboxRepository>(OutboxRepository(database.db))
+    ..registerSingleton<ConnectivityMonitor>(ConnectivityPlusMonitor())
+    ..registerLazySingleton<SyncEngine>(
+      () => SyncEngine(
+        outbox: getIt(),
+        connectivity: getIt(),
+        handlers: const <OutboxHandler>[],
+      ),
+    )
+    ..registerLazySingleton<SyncCubit>(() => SyncCubit(getIt<SyncEngine>()))
     ..registerLazySingleton<ApiClient>(
       () => ApiClient(
         config: appConfig,

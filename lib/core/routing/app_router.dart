@@ -24,6 +24,7 @@ import '../../shared/interfaces/pages/startup/startup_screen.dart';
 import '../../shared/interfaces/widgets/role_navigation_shell.dart';
 import '../../traceability/interfaces/pages/delivery/delivery_screen.dart';
 import '../di/service_locator.dart';
+import '../sync/sync_cubit.dart';
 
 /// Paths of the app. Each screen of the report gets its own constant.
 abstract final class AppRoutes {
@@ -202,6 +203,7 @@ Widget _signIn(
       getIt<AuthService>(),
       onSignedIn: (result) {
         profileCubit.signedIn(result);
+        getIt<SyncCubit>().sessionRestored();
         router.go(AppRoutes.brigadeMissions);
       },
     ),

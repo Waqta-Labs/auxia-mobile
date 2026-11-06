@@ -3,6 +3,7 @@ import 'package:auxia_mobile/core/di/service_locator.dart';
 import 'package:auxia_mobile/core/failure.dart';
 import 'package:auxia_mobile/core/localization/locale_cubit.dart';
 import 'package:auxia_mobile/core/routing/app_router.dart';
+import 'package:auxia_mobile/core/sync/sync_cubit.dart';
 import 'package:auxia_mobile/identityaccess/application/auth_service.dart';
 import 'package:auxia_mobile/identityaccess/application/profile_service.dart';
 import 'package:auxia_mobile/identityaccess/infrastructure/device/id_card_camera.dart';
@@ -35,6 +36,7 @@ void main() {
     getIt
       ..registerSingleton<ProfileService>(service)
       ..registerSingleton<AuthService>(auth)
+      ..registerSingleton<SyncCubit>(SyncCubit(FakeSyncController()))
       ..registerSingleton<IdCardCamera>(_FakeCamera());
   });
 
@@ -47,6 +49,7 @@ void main() {
         router: createAppRouter(profileCubit: profileCubit),
         localeCubit: localeCubit,
         profileCubit: profileCubit,
+        syncCubit: SyncCubit(FakeSyncController()),
       ),
     );
     await profileCubit.load();

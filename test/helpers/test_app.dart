@@ -1,4 +1,9 @@
+import 'dart:async';
+
+import 'package:auxia_mobile/core/connectivity/connectivity_monitor.dart';
+import 'package:auxia_mobile/core/database/app_database.dart';
 import 'package:auxia_mobile/core/failure.dart';
+import 'package:auxia_mobile/core/sync/sync_engine.dart';
 import 'package:auxia_mobile/core/theme/app_theme.dart';
 import 'package:auxia_mobile/identityaccess/domain/model/local_profile.dart';
 import 'package:auxia_mobile/identityaccess/domain/model/session.dart';
@@ -8,6 +13,7 @@ import 'package:auxia_mobile/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// Wraps a screen with the AuxIA theme and the Spanish localizations.
 Widget localizedApp(Widget home, {Locale locale = const Locale('es')}) =>
@@ -83,3 +89,71 @@ Session brigadeSession({
   role: role,
   fullName: 'Cap. M. Quispe',
 );
+
+/// Network that the test turns on and off.
+class FakeConnectivityMonitor implements ConnectivityMonitor {
+  FakeConnectivityMonitor({bool online = true})
+    : status = online
+          ? const NetworkStatus({NetworkChannel.cellular})
+          : const NetworkStatus.offline();
+
+  NetworkStatus status;
+  final StreamController<NetworkStatus> _changes = StreamController.broadcast();
+
+  void set({required bool online}) {
+    status = online
+        ? const NetworkStatus({NetworkChannel.cellular})
+        : const NetworkStatus.offline();
+    _changes.add(status);
+  }
+
+  @override
+  Future<NetworkStatus> current() async => status;
+
+  @override
+  Stream<NetworkStatus> get changes => _changes.stream;
+}
+
+/// Sync controller with a fixed state, for widget tests.
+class FakeSyncController implements SyncController {
+  FakeSyncController([this.state = const SyncState()]);
+
+  @override
+  SyncState state;
+  final StreamController<SyncState> _states = StreamController.broadcast();
+  int syncCalls = 0;
+  int retryCalls = 0;
+
+  void emit(SyncState next) {
+    state = next;
+    _states.add(next);
+  }
+
+  @override
+  Stream<SyncState> get states => _states.stream;
+
+  @override
+  Future<void> syncNow() async => syncCalls++;
+
+  @override
+  Future<void> retryAll() async => retryCalls++;
+
+  @override
+  void sessionRestored() {}
+}
+
+/// Fresh in-memory copy of the app database (sqflite over FFI).
+Future<Database> openTestDatabase() async {
+  sqfliteFfiInit();
+  final options = AppDatabase.options();
+  return databaseFactoryFfi.openDatabase(
+    inMemoryDatabasePath,
+    options: OpenDatabaseOptions(
+      version: options.version,
+      onConfigure: options.onConfigure,
+      onCreate: options.onCreate,
+      onUpgrade: options.onUpgrade,
+      singleInstance: false,
+    ),
+  );
+}

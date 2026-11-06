@@ -8,6 +8,8 @@ import 'app.dart';
 import 'core/di/service_locator.dart';
 import 'core/localization/locale_cubit.dart';
 import 'core/routing/app_router.dart';
+import 'core/sync/sync_cubit.dart';
+import 'core/sync/sync_engine.dart';
 import 'identityaccess/interfaces/profile_cubit.dart';
 
 Future<void> main() async {
@@ -17,12 +19,14 @@ Future<void> main() async {
 
   final profileCubit = getIt<ProfileCubit>();
   unawaited(profileCubit.load());
+  unawaited(getIt<SyncEngine>().start());
 
   runApp(
     AuxiaApp(
       router: createAppRouter(profileCubit: profileCubit),
       localeCubit: getIt<LocaleCubit>(),
       profileCubit: profileCubit,
+      syncCubit: getIt<SyncCubit>(),
     ),
   );
 }

@@ -122,5 +122,51 @@
   "actionSignOut": "Cerrar sesión",
   "signOutConfirmTitle": "¿Cerrar sesión?",
   "signOutConfirmBody": "Dejarás de recibir misiones en este dispositivo hasta que vuelvas a iniciar sesión.",
-  "missionsEmpty": "No tienes misiones asignadas. Cuando el Centro de Mando despache tu brigada, aparecerán aquí."
+  "missionsEmpty": "No tienes misiones asignadas. Cuando el Centro de Mando despache tu brigada, aparecerán aquí.",
+  "connectionWithSignal": "Con señal",
+  "offlineSavedLocally": "Guardado localmente · Sincroniza al conectar",
+  "lastSync": "Última sync: {ago}",
+  "@lastSync": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
+  "lastSyncNever": "Última sync: nunca",
+  "timeAgoNow": "hace un momento",
+  "timeAgoMinutes": "hace {count} min",
+  "@timeAgoMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeAgoHours": "hace {count} h",
+  "@timeAgoHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeAgoDays": "hace {count} d",
+  "@timeAgoDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "actionSyncNow": "Sincronizar ahora",
+  "syncPending": "{count, plural, =0{Todo sincronizado} =1{1 pendiente de sync} other{{count} pendientes de sync}}",
+  "@syncPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncInProgress": "Sincronizando"
 }

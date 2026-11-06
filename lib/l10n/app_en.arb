@@ -86,5 +86,16 @@
   "actionSignOut": "Sign out",
   "signOutConfirmTitle": "Sign out?",
   "signOutConfirmBody": "You will stop receiving missions on this device until you sign in again.",
-  "missionsEmpty": "You have no assigned missions. They will appear here when the Command Center dispatches your brigade."
+  "missionsEmpty": "You have no assigned missions. They will appear here when the Command Center dispatches your brigade.",
+  "connectionWithSignal": "Signal available",
+  "offlineSavedLocally": "Saved locally · Syncs when connected",
+  "lastSync": "Last sync: {ago}",
+  "lastSyncNever": "Last sync: never",
+  "timeAgoNow": "just now",
+  "timeAgoMinutes": "{count} min ago",
+  "timeAgoHours": "{count} h ago",
+  "timeAgoDays": "{count} d ago",
+  "actionSyncNow": "Sync now",
+  "syncPending": "{count, plural, =0{Everything synced} =1{1 waiting to sync} other{{count} waiting to sync}}",
+  "syncInProgress": "Syncing"
 }
