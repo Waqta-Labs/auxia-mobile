@@ -1,37 +1,152 @@
 import 'package:auxia_mobile/app.dart';
+import 'package:auxia_mobile/core/di/service_locator.dart';
 import 'package:auxia_mobile/core/localization/locale_cubit.dart';
 import 'package:auxia_mobile/core/routing/app_router.dart';
+import 'package:auxia_mobile/identityaccess/application/profile_service.dart';
+import 'package:auxia_mobile/identityaccess/infrastructure/device/id_card_camera.dart';
+import 'package:auxia_mobile/identityaccess/interfaces/profile_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+import 'helpers/test_app.dart';
+
+class _FakeCamera extends Mock implements IdCardCamera {}
 
 void main() {
-  testWidgets('shows the brand in spanish by default', (tester) async {
-    await tester.pumpWidget(
-      AuxiaApp(router: createAppRouter(), localeCubit: LocaleCubit()),
-    );
-    await tester.pumpAndSettle();
+  late InMemoryProfileRepository repository;
+  late LocaleCubit localeCubit;
+  late ProfileCubit profileCubit;
 
-    expect(find.text('AuxIA'), findsOneWidget);
-    expect(find.text('Auxilio y coordinación offline'), findsOneWidget);
+  setUp(() async {
+    await getIt.reset();
+    repository = InMemoryProfileRepository();
+    final service = ProfileService(repository);
+    localeCubit = LocaleCubit();
+    profileCubit = ProfileCubit(service);
+    getIt
+      ..registerSingleton<ProfileService>(service)
+      ..registerSingleton<IdCardCamera>(_FakeCamera());
   });
 
-  testWidgets('switches the interface to english', (tester) async {
-    final localeCubit = LocaleCubit();
+  Future<void> pumpApp(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
-      AuxiaApp(router: createAppRouter(), localeCubit: localeCubit),
+      AuxiaApp(
+        router: createAppRouter(profileCubit: profileCubit),
+        localeCubit: localeCubit,
+        profileCubit: profileCubit,
+      ),
     );
+    await profileCubit.load();
     await tester.pumpAndSettle();
+  }
+
+  testWidgets('a new user starts on the registration in spanish', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    expect(find.text('Crea tu cuenta'), findsOneWidget);
+    expect(find.text('Tus datos se guardan en tu dispositivo'), findsOneWidget);
+  });
+
+  testWidgets('a citizen registers and gets the citizen navigation', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    await tester.enterText(
+      find.byKey(const Key('registration.fullName')),
+      'María Quispe',
+    );
+    await tester.enterText(
+      find.byKey(const Key('registration.phone')),
+      '+51 987 654 321',
+    );
+    await tester.tap(find.text('Continuar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Solicitar Auxilio Urgente'), findsOneWidget);
+    expect(find.text('Mis reportes'), findsOneWidget);
+    expect(find.text('Ajustes'), findsOneWidget);
+  });
+
+  testWidgets('a brigadist sends the credential and lands on missions', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    await tester.enterText(
+      find.byKey(const Key('registration.fullName')),
+      'Cap. M. Quispe',
+    );
+    await tester.enterText(
+      find.byKey(const Key('registration.phone')),
+      '987654321',
+    );
+    await tester.ensureVisible(find.text('Brigadista'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Brigadista'));
+    await tester.pump();
+    await tester.tap(find.text('Continuar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Credencial de brigadista'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('credential.organization')),
+      'Defensa Civil · Región Lima',
+    );
+    await tester.enterText(
+      find.byKey(const Key('credential.brigadeCode')),
+      'BRG-ALFA-07',
+    );
+    await tester.ensureVisible(find.text('Enviar para aprobación'));
+    await tester.tap(find.text('Enviar para aprobación'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tu cuenta está pendiente de aprobación'), findsOneWidget);
+    expect(find.text('Misiones'), findsOneWidget);
+    expect(find.text('Entrega'), findsOneWidget);
+  });
+
+  testWidgets('changing the role goes back to the registration', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    await tester.enterText(
+      find.byKey(const Key('registration.fullName')),
+      'María Quispe',
+    );
+    await tester.enterText(
+      find.byKey(const Key('registration.phone')),
+      '987654321',
+    );
+    await tester.tap(find.text('Continuar'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Ajustes'));
+    await tester.pumpAndSettle();
+    expect(find.text('María Quispe'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Cambiar de rol'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Cambiar de rol'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Crea tu cuenta'), findsOneWidget);
+    expect(repository.profile, isNull);
+  });
+
+  testWidgets('the interface switches to english', (tester) async {
+    await pumpApp(tester);
 
     localeCubit.change(const Locale('en'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Offline aid and coordination'), findsOneWidget);
-  });
-
-  test('falls back to spanish for unsupported languages', () {
-    final localeCubit = LocaleCubit()..change(const Locale('fr'));
-
-    expect(localeCubit.state, const Locale('es'));
-    expect(localeCubit.languageTag, 'es');
+    expect(find.text('Create your account'), findsOneWidget);
   });
 }

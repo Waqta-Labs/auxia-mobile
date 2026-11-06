@@ -5,19 +5,29 @@ import 'package:go_router/go_router.dart';
 
 import 'core/localization/locale_cubit.dart';
 import 'core/theme/app_theme.dart';
+import 'identityaccess/interfaces/profile_cubit.dart';
 import 'l10n/generated/app_localizations.dart';
 
-/// Root widget: theme, language and router.
+/// Root widget: theme, language, app-wide state and router.
 class AuxiaApp extends StatelessWidget {
-  const AuxiaApp({super.key, required this.router, required this.localeCubit});
+  const AuxiaApp({
+    super.key,
+    required this.router,
+    required this.localeCubit,
+    required this.profileCubit,
+  });
 
   final GoRouter router;
   final LocaleCubit localeCubit;
+  final ProfileCubit profileCubit;
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: localeCubit,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: localeCubit),
+        BlocProvider.value(value: profileCubit),
+      ],
       child: BlocBuilder<LocaleCubit, Locale>(
         builder: (context, locale) => MaterialApp.router(
           onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
