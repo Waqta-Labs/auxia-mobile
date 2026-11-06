@@ -1,6 +1,11 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 
+import '../../emergencymanagement/application/quick_evidence.dart';
+import '../../emergencymanagement/application/sos_service.dart';
+import '../../emergencymanagement/domain/repositories/citizen_report_repository.dart';
+import '../../emergencymanagement/infrastructure/device/device_quick_evidence.dart';
+import '../../emergencymanagement/infrastructure/persistence/sqlite_citizen_report_repository.dart';
 import '../../identityaccess/application/auth_service.dart';
 import '../../identityaccess/application/profile_service.dart';
 import '../../identityaccess/domain/repositories/profile_repository.dart';
@@ -14,6 +19,7 @@ import '../config/app_config.dart';
 import '../connectivity/connectivity_monitor.dart';
 import '../database/app_database.dart';
 import '../localization/locale_cubit.dart';
+import '../location/location_service.dart';
 import '../network/api_client.dart';
 import '../sync/outbox_repository.dart';
 import '../sync/sync_cubit.dart';
@@ -36,6 +42,7 @@ Future<void> configureDependencies({AppConfig? config}) async {
     ..registerSingleton<AppDatabase>(database)
     ..registerSingleton<OutboxRepository>(OutboxRepository(database.db))
     ..registerSingleton<ConnectivityMonitor>(ConnectivityPlusMonitor())
+    ..registerLazySingleton<LocationService>(GeolocatorLocationService.new)
     ..registerLazySingleton<SyncEngine>(
       () => SyncEngine(
         outbox: getIt(),
@@ -66,5 +73,11 @@ Future<void> configureDependencies({AppConfig? config}) async {
       () => AuthService(getIt(), getIt(), getIt()),
     )
     ..registerLazySingleton<IdCardCamera>(IdCardCamera.new)
-    ..registerSingleton<ProfileCubit>(ProfileCubit(getIt(), getIt()));
+    ..registerSingleton<ProfileCubit>(ProfileCubit(getIt(), getIt()))
+    // Emergency Management
+    ..registerLazySingleton<CitizenReportRepository>(
+      () => SqliteCitizenReportRepository(database.db),
+    )
+    ..registerLazySingleton<SosService>(() => SosService(getIt(), getIt()))
+    ..registerLazySingleton<QuickEvidence>(DeviceQuickEvidence.new);
 }

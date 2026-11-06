@@ -4,7 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../emergencymanagement/application/quick_evidence.dart';
+import '../../emergencymanagement/application/sos_service.dart';
+import '../../emergencymanagement/interfaces/pages/emergency_detail/emergency_detail_cubit.dart';
+import '../../emergencymanagement/interfaces/pages/emergency_detail/emergency_detail_screen.dart';
 import '../../emergencymanagement/interfaces/pages/my_reports/my_reports_screen.dart';
+import '../../emergencymanagement/interfaces/pages/sos/sos_cubit.dart';
 import '../../emergencymanagement/interfaces/pages/sos/sos_screen.dart';
 import '../../identityaccess/application/auth_service.dart';
 import '../../identityaccess/application/profile_service.dart';
@@ -24,6 +29,7 @@ import '../../shared/interfaces/pages/startup/startup_screen.dart';
 import '../../shared/interfaces/widgets/role_navigation_shell.dart';
 import '../../traceability/interfaces/pages/delivery/delivery_screen.dart';
 import '../di/service_locator.dart';
+import '../location/location_service.dart';
 import '../sync/sync_cubit.dart';
 
 /// Paths of the app. Each screen of the report gets its own constant.
@@ -37,6 +43,10 @@ abstract final class AppRoutes {
   static const String citizenSos = '/citizen/sos';
   static const String citizenReports = '/citizen/reports';
   static const String citizenSettings = '/citizen/settings';
+  static const String citizenReportDetail = '/citizen/report/:reportId/detail';
+
+  static String reportDetail(String reportId, String code) =>
+      '/citizen/report/$reportId/detail?code=$code';
 
   static const String brigade = '/brigade';
   static const String brigadeMissions = '/brigade/missions';
@@ -139,10 +149,43 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
           );
         },
         branches: [
-          _branch(AppRoutes.citizenSos, const SosScreen()),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.citizenSos,
+                builder: (context, state) => BlocProvider(
+                  create: (_) =>
+                      SosCubit(getIt<SosService>(), getIt<LocationService>())
+                        ..start(),
+                  child: SosScreen(
+                    onSosSaved: (report) => context.push(
+                      AppRoutes.reportDetail(report.id, report.code),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
           _branch(AppRoutes.citizenReports, const MyReportsScreen()),
           _branch(AppRoutes.citizenSettings, const NetworkStorageScreen()),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.citizenReportDetail,
+        builder: (context, state) => BlocProvider(
+          create: (_) => EmergencyDetailCubit(
+            getIt<SosService>(),
+            getIt<QuickEvidence>(),
+            reportId: state.pathParameters['reportId']!,
+          ),
+          child: EmergencyDetailScreen(
+            reportCode: state.uri.queryParameters['code'] ?? '',
+            onBack: () => context.canPop()
+                ? context.pop()
+                : context.go(AppRoutes.citizenSos),
+            onSent: () => context.go(AppRoutes.citizenReports),
+          ),
+        ),
       ),
       GoRoute(
         path: AppRoutes.brigadeSignIn,

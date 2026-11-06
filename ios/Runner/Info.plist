@@ -49,6 +49,10 @@
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>AuxIA usa la cámara para escanear tu carnet institucional, las fotos de evidencia y el código QR de las entregas.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>AuxIA guarda tu ubicación GPS en el reporte SOS y en el registro de las entregas para que la ayuda llegue al lugar correcto.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>AuxIA graba un audio de 5 segundos solo cuando mantienes presionado el botón de audio del detalle de emergencia.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>AuxIA usa tus fotos solo cuando eliges una imagen como evidencia.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

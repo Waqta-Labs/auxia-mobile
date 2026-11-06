@@ -3,13 +3,16 @@ import 'dart:async';
 import 'package:auxia_mobile/core/connectivity/connectivity_monitor.dart';
 import 'package:auxia_mobile/core/database/app_database.dart';
 import 'package:auxia_mobile/core/failure.dart';
+import 'package:auxia_mobile/core/location/location_service.dart';
 import 'package:auxia_mobile/core/sync/sync_engine.dart';
 import 'package:auxia_mobile/core/theme/app_theme.dart';
+import 'package:auxia_mobile/emergencymanagement/application/quick_evidence.dart';
 import 'package:auxia_mobile/identityaccess/domain/model/local_profile.dart';
 import 'package:auxia_mobile/identityaccess/domain/model/session.dart';
 import 'package:auxia_mobile/identityaccess/domain/repositories/profile_repository.dart';
 import 'package:auxia_mobile/identityaccess/domain/repositories/session_repository.dart';
 import 'package:auxia_mobile/l10n/generated/app_localizations.dart';
+import 'package:auxia_mobile/shared/domain/geo_point.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:fpdart/fpdart.dart';
@@ -142,11 +145,12 @@ class FakeSyncController implements SyncController {
   void sessionRestored() {}
 }
 
-/// Fresh in-memory copy of the app database (sqflite over FFI).
+/// Fresh in-memory copy of the app database (sqflite over FFI, in the same
+/// isolate so it also works inside widget tests).
 Future<Database> openTestDatabase() async {
   sqfliteFfiInit();
   final options = AppDatabase.options();
-  return databaseFactoryFfi.openDatabase(
+  return databaseFactoryFfiNoIsolate.openDatabase(
     inMemoryDatabasePath,
     options: OpenDatabaseOptions(
       version: options.version,
@@ -156,4 +160,36 @@ Future<Database> openTestDatabase() async {
       singleInstance: false,
     ),
   );
+}
+
+/// GPS that answers with a fixed result.
+class FakeLocationService implements LocationService {
+  FakeLocationService([
+    this.result = const LocationFix(GeoPoint(-12.0464, -77.0428)),
+  ]);
+
+  LocationResult result;
+
+  @override
+  Future<LocationResult> locate({Duration timeout = Duration.zero}) async =>
+      result;
+}
+
+/// Camera and microphone that return fixed files.
+class FakeQuickEvidence implements QuickEvidence {
+  bool microphoneAllowed = true;
+  bool recording = false;
+  String? photo = '/evidence/photo.jpg';
+
+  @override
+  Future<String?> takePhoto() async => photo;
+
+  @override
+  Future<bool> startAudio() async => recording = microphoneAllowed;
+
+  @override
+  Future<String?> stopAudio() async {
+    recording = false;
+    return '/evidence/audio.m4a';
+  }
 }
