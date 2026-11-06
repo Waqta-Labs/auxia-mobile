@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../emergencymanagement/interfaces/pages/my_reports/my_reports_screen.dart';
 import '../../emergencymanagement/interfaces/pages/sos/sos_screen.dart';
+import '../../identityaccess/application/auth_service.dart';
 import '../../identityaccess/application/profile_service.dart';
 import '../../identityaccess/domain/model/user_role.dart';
 import '../../identityaccess/infrastructure/device/id_card_camera.dart';
@@ -13,6 +14,8 @@ import '../../identityaccess/interfaces/pages/brigade_credential/brigade_credent
 import '../../identityaccess/interfaces/pages/brigade_credential/brigade_credential_screen.dart';
 import '../../identityaccess/interfaces/pages/registration/registration_cubit.dart';
 import '../../identityaccess/interfaces/pages/registration/registration_screen.dart';
+import '../../identityaccess/interfaces/pages/sign_in/sign_in_cubit.dart';
+import '../../identityaccess/interfaces/pages/sign_in/sign_in_screen.dart';
 import '../../identityaccess/interfaces/profile_cubit.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../networkstorage/interfaces/pages/network_storage/network_storage_screen.dart';
@@ -27,6 +30,7 @@ abstract final class AppRoutes {
   static const String startup = '/';
   static const String registration = '/registration';
   static const String brigadeCredential = '/registration/credential';
+  static const String registrationSignIn = '/registration/sign-in';
 
   static const String citizen = '/citizen';
   static const String citizenSos = '/citizen/sos';
@@ -37,6 +41,7 @@ abstract final class AppRoutes {
   static const String brigadeMissions = '/brigade/missions';
   static const String brigadeDelivery = '/brigade/delivery';
   static const String brigadeSettings = '/brigade/settings';
+  static const String brigadeSignIn = '/brigade/sign-in';
 }
 
 /// Sends each user to the place that matches the local profile: the
@@ -82,9 +87,15 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
           child: RegistrationScreen(
             onContinueToCredential: (pending) =>
                 context.push(AppRoutes.brigadeCredential, extra: pending),
+            onSignIn: () => context.push(AppRoutes.registrationSignIn),
           ),
         ),
         routes: [
+          GoRoute(
+            path: 'sign-in',
+            builder: (context, state) =>
+                _signIn(context, profileCubit, onBack: () => context.pop()),
+          ),
           GoRoute(
             path: 'credential',
             redirect: (context, state) => state.extra is PendingRegistration
@@ -132,6 +143,11 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
           _branch(AppRoutes.citizenSettings, const NetworkStorageScreen()),
         ],
       ),
+      GoRoute(
+        path: AppRoutes.brigadeSignIn,
+        builder: (context, state) =>
+            _signIn(context, profileCubit, onBack: () => context.pop()),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) {
           final l10n = AppLocalizations.of(context);
@@ -157,12 +173,39 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
           );
         },
         branches: [
-          _branch(AppRoutes.brigadeMissions, const MissionsScreen()),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.brigadeMissions,
+                builder: (context, state) => MissionsScreen(
+                  onSignIn: () => context.push(AppRoutes.brigadeSignIn),
+                ),
+              ),
+            ],
+          ),
           _branch(AppRoutes.brigadeDelivery, const DeliveryScreen()),
           _branch(AppRoutes.brigadeSettings, const NetworkStorageScreen()),
         ],
       ),
     ],
+  );
+}
+
+Widget _signIn(
+  BuildContext context,
+  ProfileCubit profileCubit, {
+  required VoidCallback onBack,
+}) {
+  final router = GoRouter.of(context);
+  return BlocProvider(
+    create: (_) => SignInCubit(
+      getIt<AuthService>(),
+      onSignedIn: (result) {
+        profileCubit.signedIn(result);
+        router.go(AppRoutes.brigadeMissions);
+      },
+    ),
+    child: SignInScreen(onBack: onBack),
   );
 }
 
