@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -6,14 +8,22 @@ import 'app.dart';
 import 'core/di/service_locator.dart';
 import 'core/localization/locale_cubit.dart';
 import 'core/routing/app_router.dart';
+import 'identityaccess/interfaces/profile_cubit.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _registerFontLicense();
   await configureDependencies();
 
+  final profileCubit = getIt<ProfileCubit>();
+  unawaited(profileCubit.load());
+
   runApp(
-    AuxiaApp(router: createAppRouter(), localeCubit: getIt<LocaleCubit>()),
+    AuxiaApp(
+      router: createAppRouter(profileCubit: profileCubit),
+      localeCubit: getIt<LocaleCubit>(),
+      profileCubit: profileCubit,
+    ),
   );
 }
 

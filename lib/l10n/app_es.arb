@@ -31,5 +31,84 @@
   "errorSessionExpired": "Tu sesión venció. Inicia sesión de nuevo para sincronizar.",
   "@errorSessionExpired": {
     "description": "Shown when the API answers 401."
-  }
+  },
+
+  "actionContinue": "Continuar",
+  "actionBack": "Volver",
+  "actionCancel": "Cancelar",
+
+  "registrationTitle": "Crea tu cuenta",
+  "@registrationTitle": {
+    "description": "Title of A_01, registration and role selection."
+  },
+  "registrationSubtitle": "Elige tu rol. Define qué verás y qué podrás hacer.",
+  "fullNameLabel": "Nombre completo",
+  "phoneLabel": "Teléfono",
+  "roleQuestion": "¿Cuál es tu rol?",
+  "roleCitizen": "Ciudadano",
+  "roleCitizenTagline": "Necesito pedir auxilio",
+  "roleCitizenBenefitSos": "SOS con 1 toque, incluso sin señal",
+  "roleCitizenBenefitStatus": "Detallar emergencia y ver el estado de mi ayuda",
+  "roleBrigadist": "Brigadista",
+  "roleBrigadistTagline": "Rescate y entrega de ayuda en campo",
+  "roleBrigadistBenefitMissions": "Misiones priorizadas por IA y navegación",
+  "roleBrigadistBenefitBlockchain": "Verificar entregas en Blockchain",
+  "roleBrigadistApproval": "Requiere aprobación del Centro de Mando",
+  "registrationLocalNote": "Tus datos se guardan en tu dispositivo",
+
+  "validationNameRequired": "Ingresa tu nombre completo.",
+  "validationNameTooShort": "El nombre es muy corto.",
+  "validationNameTooLong": "El nombre es muy largo.",
+  "validationPhoneRequired": "Ingresa tu teléfono.",
+  "validationPhoneInvalid": "Ingresa un teléfono válido, por ejemplo +51 987 654 321.",
+  "validationOrganizationRequired": "Ingresa tu organismo.",
+  "validationBrigadeCodeRequired": "Ingresa el código de tu brigada.",
+  "validationBrigadeCodeInvalid": "Usa letras, números y guiones, por ejemplo BRG-ALFA-07.",
+
+  "credentialTitle": "Credencial de brigadista",
+  "@credentialTitle": {
+    "description": "Title of A_02, brigade credential."
+  },
+  "credentialStep": "Paso 2 de 2 · Verifica que perteneces a un organismo de respuesta.",
+  "organizationLabel": "Organismo",
+  "brigadeCodeLabel": "Código de brigada",
+  "scanIdCard": "Escanear carnet institucional",
+  "idCardScanned": "Carnet institucional escaneado",
+  "statusPendingApproval": "Pendiente de aprobación",
+  "credentialPendingDetail": "El Centro de Mando revisa tu cuenta. Funciona sin señal: se valida al sincronizar.",
+  "credentialCanDo": "Con tu cuenta podrás",
+  "credentialCanMissions": "Recibir misiones asignadas por la IA",
+  "credentialCanDeliveries": "Navegar y escanear QR de entregas",
+  "credentialCannot": "Asignar brigadas o editar inventario (solo Centro de Mando)",
+  "actionSendForApproval": "Enviar para aprobación",
+  "actionBackChangeRole": "Volver y cambiar de rol",
+  "idCardCameraError": "No pudimos abrir la cámara. Puedes enviar la credencial sin el carnet.",
+
+  "navSos": "SOS",
+  "navMyReports": "Mis reportes",
+  "navSettings": "Ajustes",
+  "navMissions": "Misiones",
+  "navDelivery": "Entrega",
+
+  "sosTitle": "Solicitar Auxilio Urgente",
+  "sosSubtitle": "Un toque. No necesitas señal.",
+
+  "reportsTitle": "Mis reportes",
+  "reportsEmpty": "Aún no enviaste reportes. Usa el botón SOS cuando necesites ayuda.",
+
+  "missionsAssigned": "Misiones asignadas",
+  "missionsPendingTitle": "Tu cuenta está pendiente de aprobación",
+  "missionsPendingDetail": "Cuando tu organización cree tu cuenta institucional, inicia sesión para recibir las misiones que te asigne el Centro de Mando.",
+
+  "deliveryTitle": "Verificar entrega",
+  "deliveryEmpty": "No tienes una entrega en curso. Inicia la navegación de una misión para verificar su entrega.",
+
+  "settingsTitle": "Red y almacenamiento",
+  "@settingsTitle": {
+    "description": "Title of A_06 and A_09."
+  },
+  "actionChangeRole": "Cambiar de rol",
+  "changeRoleConfirmTitle": "¿Cambiar de rol?",
+  "changeRoleConfirmBody": "Se borrará tu perfil de este dispositivo y volverás a la pantalla de registro.",
+  "actionConfirmChangeRole": "Cambiar de rol"
 }

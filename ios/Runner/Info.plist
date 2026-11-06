@@ -47,6 +47,10 @@
 			</array>
 		</dict>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>AuxIA usa la cámara para escanear tu carnet institucional, las fotos de evidencia y el código QR de las entregas.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AuxIA usa tus fotos solo cuando eliges una imagen como evidencia.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
