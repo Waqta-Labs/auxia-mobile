@@ -1,9 +1,12 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 
+import '../../emergencymanagement/application/citizen_report_sync.dart';
 import '../../emergencymanagement/application/quick_evidence.dart';
 import '../../emergencymanagement/application/sos_service.dart';
+import '../../emergencymanagement/domain/repositories/citizen_report_gateway.dart';
 import '../../emergencymanagement/domain/repositories/citizen_report_repository.dart';
+import '../../emergencymanagement/infrastructure/api/http_citizen_report_gateway.dart';
 import '../../emergencymanagement/infrastructure/device/device_quick_evidence.dart';
 import '../../emergencymanagement/infrastructure/persistence/sqlite_citizen_report_repository.dart';
 import '../../identityaccess/application/auth_service.dart';
@@ -47,7 +50,10 @@ Future<void> configureDependencies({AppConfig? config}) async {
       () => SyncEngine(
         outbox: getIt(),
         connectivity: getIt(),
-        handlers: const <OutboxHandler>[],
+        handlers: <OutboxHandler>[
+          CitizenReportHandler(getIt(), getIt()),
+          CitizenReportDetailHandler(getIt(), getIt()),
+        ],
       ),
     )
     ..registerLazySingleton<SyncCubit>(() => SyncCubit(getIt<SyncEngine>()))
@@ -78,6 +84,12 @@ Future<void> configureDependencies({AppConfig? config}) async {
     ..registerLazySingleton<CitizenReportRepository>(
       () => SqliteCitizenReportRepository(database.db),
     )
+    ..registerLazySingleton<CitizenReportGateway>(
+      () => HttpCitizenReportGateway(getIt()),
+    )
     ..registerLazySingleton<SosService>(() => SosService(getIt(), getIt()))
+    ..registerLazySingleton<MyReportsService>(
+      () => MyReportsService(getIt(), getIt()),
+    )
     ..registerLazySingleton<QuickEvidence>(DeviceQuickEvidence.new);
 }
