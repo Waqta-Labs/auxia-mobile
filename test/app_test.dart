@@ -1,129 +1,17 @@
-import 'dart:io';
-
-import 'package:auxia_mobile/app.dart';
-import 'package:auxia_mobile/core/config/app_config.dart';
-import 'package:auxia_mobile/core/database/app_database.dart';
-import 'package:auxia_mobile/core/di/service_locator.dart';
 import 'package:auxia_mobile/core/failure.dart';
-import 'package:auxia_mobile/core/localization/locale_cubit.dart';
-import 'package:auxia_mobile/core/location/location_service.dart';
-import 'package:auxia_mobile/core/maps/offline_tile_store.dart';
-import 'package:auxia_mobile/core/routing/app_router.dart';
-import 'package:auxia_mobile/core/sync/outbox_repository.dart';
-import 'package:auxia_mobile/core/sync/sync_cubit.dart';
-import 'package:auxia_mobile/emergencymanagement/application/citizen_report_sync.dart';
-import 'package:auxia_mobile/emergencymanagement/application/quick_evidence.dart';
-import 'package:auxia_mobile/emergencymanagement/application/sos_service.dart';
-import 'package:auxia_mobile/emergencymanagement/infrastructure/persistence/sqlite_citizen_report_repository.dart';
-import 'package:auxia_mobile/identityaccess/application/auth_service.dart';
-import 'package:auxia_mobile/identityaccess/application/profile_service.dart';
-import 'package:auxia_mobile/identityaccess/infrastructure/device/id_card_camera.dart';
-import 'package:auxia_mobile/identityaccess/interfaces/profile_cubit.dart';
-import 'package:auxia_mobile/networkstorage/application/offline_maps_service.dart';
-import 'package:auxia_mobile/networkstorage/application/storage_stats.dart';
-import 'package:auxia_mobile/networkstorage/infrastructure/sqlite_storage_stats.dart';
-import 'package:auxia_mobile/resourcemanagement/application/mission_service.dart';
-import 'package:auxia_mobile/resourcemanagement/infrastructure/device/navigation_launcher.dart';
-import 'package:auxia_mobile/resourcemanagement/infrastructure/persistence/sqlite_mission_cache.dart';
-import 'package:auxia_mobile/traceability/application/delivery_evidence.dart';
-import 'package:auxia_mobile/traceability/application/delivery_service.dart';
-import 'package:auxia_mobile/traceability/infrastructure/device/explorer_launcher.dart';
-import 'package:auxia_mobile/traceability/infrastructure/persistence/sqlite_delivery_record_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:mocktail/mocktail.dart';
 
-import 'helpers/test_app.dart';
-
-class _FakeCamera extends Mock implements IdCardCamera {}
+import 'helpers/app_harness.dart';
 
 void main() {
-  late InMemoryProfileRepository repository;
-  late LocaleCubit localeCubit;
-  late ProfileCubit profileCubit;
-  late FakeAuthenticationGateway gateway;
-  late InMemorySessionRepository sessions;
+  late AppHarness app;
 
-  setUp(() async {
-    await getIt.reset();
-    final db = await openTestDatabase();
-    final citizenReports = SqliteCitizenReportRepository(db);
-    getIt
-      ..registerSingleton<SosService>(
-        SosService(citizenReports, OutboxRepository(db)),
-      )
-      ..registerSingleton<MyReportsService>(
-        MyReportsService(citizenReports, FakeCitizenReportGateway()),
-      )
-      ..registerSingleton<MissionService>(
-        MissionService(
-          FakeMissionGateway(mission: null),
-          SqliteMissionCache(db),
-        ),
-      )
-      ..registerSingleton<NavigationLauncher>(NavigationLauncher())
-      ..registerSingleton<DeliveryService>(
-        DeliveryService(
-          SqliteDeliveryRecordRepository(db),
-          OutboxRepository(db),
-          FakeDeliveryGateway(),
-        ),
-      )
-      ..registerSingleton<DeliveryEvidence>(FakeDeliveryEvidence())
-      ..registerSingleton<ExplorerLauncher>(ExplorerLauncher())
-      ..registerSingleton<OutboxRepository>(OutboxRepository(db))
-      ..registerSingleton<StorageStatsSource>(
-        SqliteStorageStats(AppDatabase(db)),
-      )
-      ..registerSingleton<OfflineMapsService>(
-        OfflineMapsService(
-          OfflineTileStore(
-            directory: Directory.systemTemp.createTempSync('auxia_'),
-            urlTemplate: 'x/{z}/{x}/{y}',
-          ),
-        ),
-      )
-      ..registerSingleton<AppConfig>(
-        const AppConfig(
-          apiBaseUrl: 'https://api.test',
-          mapTileUrlTemplate: null,
-        ),
-      );
-    repository = InMemoryProfileRepository();
-    final service = ProfileService(repository);
-    gateway = FakeAuthenticationGateway();
-    sessions = InMemorySessionRepository();
-    final auth = AuthService(gateway, sessions, repository);
-    localeCubit = LocaleCubit();
-    profileCubit = ProfileCubit(service, auth);
-    getIt
-      ..registerSingleton<ProfileService>(service)
-      ..registerSingleton<AuthService>(auth)
-      ..registerSingleton<SyncCubit>(SyncCubit(FakeSyncController()))
-      ..registerSingleton<LocationService>(FakeLocationService())
-      ..registerSingleton<QuickEvidence>(FakeQuickEvidence())
-      ..registerSingleton<IdCardCamera>(_FakeCamera());
-  });
+  setUp(() async => app = await AppHarness.create());
 
-  Future<void> pumpApp(WidgetTester tester, {bool tall = false}) async {
-    tester.view.physicalSize = Size(1080, tall ? 7000 : 2340);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
-    tester.platformDispatcher.accessibilityFeaturesTestValue =
-        const FakeAccessibilityFeatures(disableAnimations: true);
-    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
-    await tester.pumpWidget(
-      AuxiaApp(
-        router: createAppRouter(profileCubit: profileCubit),
-        localeCubit: localeCubit,
-        profileCubit: profileCubit,
-        syncCubit: SyncCubit(FakeSyncController()),
-      ),
-    );
-    await profileCubit.load();
-    await tester.pumpAndSettle();
-  }
+  Future<void> pumpApp(WidgetTester tester, {bool tall = false}) =>
+      app.pump(tester, size: Size(360, tall ? 2333 : 780));
 
   testWidgets('a new user starts on the registration in spanish', (
     tester,
@@ -257,7 +145,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Crea tu cuenta'), findsOneWidget);
-    expect(repository.profile, isNull);
+    expect(app.profiles.profile, isNull);
   });
 
   testWidgets('a brigadist with an account signs in from the registration', (
@@ -283,7 +171,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('No tienes misiones asignadas'), findsOneWidget);
-    expect(sessions.session, isNotNull);
+    expect(app.sessions.session, isNotNull);
 
     await tester.tap(find.text('Ajustes'));
     await tester.pumpAndSettle();
@@ -294,14 +182,14 @@ void main() {
     await tester.tap(find.widgetWithText(TextButton, 'Cerrar sesión'));
     await tester.pumpAndSettle();
 
-    expect(sessions.session, isNull);
+    expect(app.sessions.session, isNull);
     expect(find.widgetWithText(OutlinedButton, 'Cerrar sesión'), findsNothing);
   });
 
   testWidgets('the sign-in shows the generic error of the backend', (
     tester,
   ) async {
-    gateway.result = const Left(
+    app.authGateway.result = const Left(
       UnauthorizedFailure('Credenciales no válidas.'),
     );
     await pumpApp(tester);
@@ -327,7 +215,7 @@ void main() {
   testWidgets('the interface switches to english', (tester) async {
     await pumpApp(tester);
 
-    localeCubit.change(const Locale('en'));
+    app.localeCubit.change(const Locale('en'));
     await tester.pumpAndSettle();
 
     expect(find.text('Create your account'), findsOneWidget);

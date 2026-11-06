@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import 'auxia_mark.dart';
 
 /// Top bar of the home screens (A_03 and A_07): the isotype on the left and
@@ -11,6 +12,13 @@ class BrandHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(children: [const AuxiaMark(), const Spacer(), ?trailing]);
+    return Row(
+      children: [
+        const AuxiaMark(),
+        const SizedBox(width: AppSpacing.md),
+        const Spacer(),
+        if (trailing != null) Flexible(flex: 4, child: trailing!),
+      ],
+    );
   }
 }

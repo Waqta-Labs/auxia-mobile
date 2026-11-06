@@ -42,9 +42,11 @@ class ProfileSummaryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.xs),
-          StatusChip(
-            label: isBrigadist ? l10n.roleBrigadist : l10n.roleCitizen,
-            tone: isBrigadist ? StatusTone.info : StatusTone.highlight,
+          Flexible(
+            child: StatusChip(
+              label: isBrigadist ? l10n.roleBrigadist : l10n.roleCitizen,
+              tone: isBrigadist ? StatusTone.info : StatusTone.highlight,
+            ),
           ),
         ],
       ),

@@ -77,7 +77,9 @@ class SosScreen extends StatelessWidget {
                     child: Text(
                       l10n.sosTitle,
                       textAlign: TextAlign.center,
-                      style: textTheme.headlineMedium,
+                      style: MediaQuery.sizeOf(context).width < 360
+                          ? textTheme.headlineSmall
+                          : textTheme.headlineMedium,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xxs),
@@ -90,16 +92,24 @@ class SosScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Center(
-                    child: SosButton(
-                      semanticLabel: l10n.sosButtonSemantics(
-                        categoryLabel(l10n, state.category),
+                    // The SOS must be visible without scrolling, also on
+                    // small phones: its size follows the screen height.
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: (MediaQuery.sizeOf(context).height * 0.36)
+                            .clamp(176.0, 320.0),
                       ),
-                      onPressed: state.sending
-                          ? null
-                          : () {
-                              HapticFeedback.heavyImpact();
-                              cubit.sendSos();
-                            },
+                      child: SosButton(
+                        semanticLabel: l10n.sosButtonSemantics(
+                          categoryLabel(l10n, state.category),
+                        ),
+                        onPressed: state.sending
+                            ? null
+                            : () {
+                                HapticFeedback.heavyImpact();
+                                cubit.sendSos();
+                              },
+                      ),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
