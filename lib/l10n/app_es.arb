@@ -322,5 +322,133 @@
         "type": "int"
       }
     }
-  }
+  },
+  "missionsOnMap": "{count, plural, =0{Sin misiones · Urgency Score IA} =1{1 misión · Urgency Score IA} other{{count} misiones · Urgency Score IA}}",
+  "@missionsOnMap": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "missionsOfflineSaved": "Offline · guardadas",
+  "missionsUpdated": "Actualizado {ago}",
+  "@missionsUpdated": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
+  "missionWhyPriority": "Por qué esta prioridad",
+  "missionNoExplanation": "Prioridad asignada por el Centro de Mando.",
+  "damageLow": "Daño leve",
+  "damageModerate": "Daño moderado",
+  "damageSevere": "Daño severo",
+  "damageCritical": "Daño crítico",
+  "reasonPeopleAffected": "{count, plural, =1{1 persona afectada} other{{count} personas afectadas}}",
+  "@reasonPeopleAffected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reasonNeeds": "necesidades urgentes",
+  "pillChildren": "{count, plural, =1{1 niño} other{{count} niños}}",
+  "@pillChildren": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pillElderly": "{count, plural, =1{1 adulto mayor} other{{count} adultos mayores}}",
+  "@pillElderly": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pillDisabled": "{count, plural, =1{1 con discapacidad} other{{count} con discapacidad}}",
+  "@pillDisabled": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "missionDistance": "{km} km · {minutes} min",
+  "@missionDistance": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "missionGps": "GPS {coordinates}",
+  "@missionGps": {
+    "placeholders": {
+      "coordinates": {
+        "type": "String"
+      }
+    }
+  },
+  "missionApprovedAgo": "Plan aprobado {ago}",
+  "@missionApprovedAgo": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
+  "priorityLow": "Prioridad baja",
+  "priorityMedium": "Prioridad media",
+  "priorityHigh": "Prioridad alta",
+  "priorityCritical": "Prioridad crítica",
+  "missionItems": "Recursos a entregar",
+  "missionItem": "{quantity} {unit} · {name}",
+  "@missionItem": {
+    "placeholders": {
+      "quantity": {
+        "type": "int"
+      },
+      "unit": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "unitUnit": "u.",
+  "unitKg": "kg",
+  "unitLiter": "L",
+  "unitKit": "kits",
+  "actionStartNavigation": "Iniciar navegación",
+  "actionVerifyDelivery": "Verificar entrega",
+  "actionOpenNavigation": "Abrir navegación",
+  "missionNavigating": "Navegación en curso",
+  "missionCompleted": "Misión completada",
+  "chooseBrigadeTitle": "Elige tu brigada",
+  "chooseBrigadeBody": "No encontramos tu nombre en una sola brigada de tu organización. Elige la tuya; lo recordaremos en este dispositivo.",
+  "missionsRefreshError": "No pudimos actualizar las misiones. Mostramos las guardadas en tu dispositivo.",
+  "mapRecenter": "Centrar mapa",
+  "mapMyLocation": "Tu ubicación",
+  "mapMissionMarker": "{zone}, Urgency Score {score}",
+  "@mapMissionMarker": {
+    "placeholders": {
+      "zone": {
+        "type": "String"
+      },
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "navigationUnavailable": "No pudimos abrir la navegación en este dispositivo."
 }

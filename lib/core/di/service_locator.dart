@@ -18,6 +18,11 @@ import '../../identityaccess/infrastructure/device/id_card_camera.dart';
 import '../../identityaccess/infrastructure/persistence/secure_profile_repository.dart';
 import '../../identityaccess/infrastructure/persistence/secure_session_repository.dart';
 import '../../identityaccess/interfaces/profile_cubit.dart';
+import '../../resourcemanagement/application/mission_service.dart';
+import '../../resourcemanagement/domain/repositories/mission_ports.dart';
+import '../../resourcemanagement/infrastructure/api/http_mission_gateway.dart';
+import '../../resourcemanagement/infrastructure/device/navigation_launcher.dart';
+import '../../resourcemanagement/infrastructure/persistence/sqlite_mission_cache.dart';
 import '../config/app_config.dart';
 import '../connectivity/connectivity_monitor.dart';
 import '../database/app_database.dart';
@@ -91,5 +96,12 @@ Future<void> configureDependencies({AppConfig? config}) async {
     ..registerLazySingleton<MyReportsService>(
       () => MyReportsService(getIt(), getIt()),
     )
-    ..registerLazySingleton<QuickEvidence>(DeviceQuickEvidence.new);
+    ..registerLazySingleton<QuickEvidence>(DeviceQuickEvidence.new)
+    // Resource Management
+    ..registerLazySingleton<MissionGateway>(() => HttpMissionGateway(getIt()))
+    ..registerLazySingleton<MissionCache>(() => SqliteMissionCache(database.db))
+    ..registerLazySingleton<MissionService>(
+      () => MissionService(getIt(), getIt()),
+    )
+    ..registerLazySingleton<NavigationLauncher>(NavigationLauncher.new);
 }

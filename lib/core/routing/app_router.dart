@@ -26,10 +26,14 @@ import '../../identityaccess/interfaces/pages/sign_in/sign_in_screen.dart';
 import '../../identityaccess/interfaces/profile_cubit.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../networkstorage/interfaces/pages/network_storage/network_storage_screen.dart';
+import '../../resourcemanagement/application/mission_service.dart';
+import '../../resourcemanagement/infrastructure/device/navigation_launcher.dart';
+import '../../resourcemanagement/interfaces/pages/missions/missions_cubit.dart';
 import '../../resourcemanagement/interfaces/pages/missions/missions_screen.dart';
 import '../../shared/interfaces/pages/startup/startup_screen.dart';
 import '../../shared/interfaces/widgets/role_navigation_shell.dart';
 import '../../traceability/interfaces/pages/delivery/delivery_screen.dart';
+import '../config/app_config.dart';
 import '../di/service_locator.dart';
 import '../location/location_service.dart';
 import '../sync/sync_cubit.dart';
@@ -55,6 +59,9 @@ abstract final class AppRoutes {
   static const String brigadeDelivery = '/brigade/delivery';
   static const String brigadeSettings = '/brigade/settings';
   static const String brigadeSignIn = '/brigade/sign-in';
+
+  static String deliveryFor(String missionId) =>
+      '$brigadeDelivery?mission=$missionId';
 }
 
 /// Sends each user to the place that matches the local profile: the
@@ -236,6 +243,15 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
                 path: AppRoutes.brigadeMissions,
                 builder: (context, state) => MissionsScreen(
                   onSignIn: () => context.push(AppRoutes.brigadeSignIn),
+                  createCubit: (fullName) => MissionsCubit(
+                    getIt<MissionService>(),
+                    getIt<LocationService>(),
+                    fullName: fullName,
+                  ),
+                  onVerifyDelivery: (mission) =>
+                      context.go(AppRoutes.deliveryFor(mission.id)),
+                  onNavigate: getIt<NavigationLauncher>().navigateTo,
+                  tileUrlTemplate: getIt<AppConfig>().mapTileUrlTemplate,
                 ),
               ),
             ],

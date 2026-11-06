@@ -1,0 +1,78 @@
+import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../../core/failure.dart';
+import '../../../../core/location/location_service.dart';
+import '../../../../shared/domain/geo_point.dart';
+import '../../../application/mission_service.dart';
+import '../../../domain/model/mission.dart';
+
+part 'missions_state.dart';
+
+/// Misiones y mapa (A_07): cached missions first, then the backend.
+class MissionsCubit extends Cubit<MissionsState> {
+  MissionsCubit(
+    this._service,
+    this._location, {
+    required this.fullName,
+    DateTime Function()? clock,
+  }) : _clock = clock ?? DateTime.now,
+       super(const MissionsState());
+
+  final MissionService _service;
+  final LocationService _location;
+
+  /// Name of the institutional account, to find the brigade.
+  final String fullName;
+  final DateTime Function() _clock;
+
+  Future<void> start() async {
+    final cached = await _service.cached();
+    if (isClosed) return;
+    emit(state.copyWith(snapshot: cached, loading: false));
+    await Future.wait([_locate(), refresh()]);
+  }
+
+  Future<void> refresh() async {
+    emit(state.copyWith(refreshing: true, failure: () => null));
+    final result = await _service.refresh(fullName);
+    if (isClosed) return;
+    result.fold(
+      (failure) =>
+          emit(state.copyWith(refreshing: false, failure: () => failure)),
+      (outcome) => switch (outcome) {
+        MissionsRefreshed(:final snapshot) => emit(
+          state.copyWith(
+            refreshing: false,
+            snapshot: snapshot,
+            brigadeChoice: () => null,
+          ),
+        ),
+        BrigadeChoiceNeeded(:final brigades) => emit(
+          state.copyWith(refreshing: false, brigadeChoice: () => brigades),
+        ),
+      },
+    );
+  }
+
+  Future<void> chooseBrigade(BrigadeSummary brigade) async {
+    await _service.chooseBrigade(brigade.id);
+    emit(state.copyWith(brigadeChoice: () => null));
+    await refresh();
+  }
+
+  Future<void> startNavigation(Mission mission) async {
+    await _service.startNavigation(mission);
+    emit(state.copyWith(snapshot: await _service.cached()));
+  }
+
+  Future<void> _locate() async {
+    final result = await _location.locate();
+    if (isClosed) return;
+    if (result case LocationFix(:final point)) {
+      emit(state.copyWith(myLocation: point));
+    }
+  }
+
+  DateTime now() => _clock();
+}
