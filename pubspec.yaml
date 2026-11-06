@@ -29,6 +29,8 @@ dependencies:
   sqflite_common: ^2.5.15
   connectivity_plus: ^7.3.2
   uuid: ^4.6.0
+  geolocator: ^14.0.1
+  record: ^7.1.2
 
 dev_dependencies:
   flutter_test:
