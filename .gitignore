@@ -54,3 +54,4 @@ android/key.properties
 
 # CocoaPods
 ios/Pods/
+lib/l10n/generated/
