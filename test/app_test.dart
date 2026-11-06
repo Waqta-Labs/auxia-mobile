@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:auxia_mobile/app.dart';
 import 'package:auxia_mobile/core/config/app_config.dart';
+import 'package:auxia_mobile/core/database/app_database.dart';
 import 'package:auxia_mobile/core/di/service_locator.dart';
 import 'package:auxia_mobile/core/failure.dart';
 import 'package:auxia_mobile/core/localization/locale_cubit.dart';
 import 'package:auxia_mobile/core/location/location_service.dart';
+import 'package:auxia_mobile/core/maps/offline_tile_store.dart';
 import 'package:auxia_mobile/core/routing/app_router.dart';
 import 'package:auxia_mobile/core/sync/outbox_repository.dart';
 import 'package:auxia_mobile/core/sync/sync_cubit.dart';
@@ -15,6 +19,9 @@ import 'package:auxia_mobile/identityaccess/application/auth_service.dart';
 import 'package:auxia_mobile/identityaccess/application/profile_service.dart';
 import 'package:auxia_mobile/identityaccess/infrastructure/device/id_card_camera.dart';
 import 'package:auxia_mobile/identityaccess/interfaces/profile_cubit.dart';
+import 'package:auxia_mobile/networkstorage/application/offline_maps_service.dart';
+import 'package:auxia_mobile/networkstorage/application/storage_stats.dart';
+import 'package:auxia_mobile/networkstorage/infrastructure/sqlite_storage_stats.dart';
 import 'package:auxia_mobile/resourcemanagement/application/mission_service.dart';
 import 'package:auxia_mobile/resourcemanagement/infrastructure/device/navigation_launcher.dart';
 import 'package:auxia_mobile/resourcemanagement/infrastructure/persistence/sqlite_mission_cache.dart';
@@ -65,6 +72,18 @@ void main() {
       )
       ..registerSingleton<DeliveryEvidence>(FakeDeliveryEvidence())
       ..registerSingleton<ExplorerLauncher>(ExplorerLauncher())
+      ..registerSingleton<OutboxRepository>(OutboxRepository(db))
+      ..registerSingleton<StorageStatsSource>(
+        SqliteStorageStats(AppDatabase(db)),
+      )
+      ..registerSingleton<OfflineMapsService>(
+        OfflineMapsService(
+          OfflineTileStore(
+            directory: Directory.systemTemp.createTempSync('auxia_'),
+            urlTemplate: 'x/{z}/{x}/{y}',
+          ),
+        ),
+      )
       ..registerSingleton<AppConfig>(
         const AppConfig(
           apiBaseUrl: 'https://api.test',
@@ -87,8 +106,8 @@ void main() {
       ..registerSingleton<IdCardCamera>(_FakeCamera());
   });
 
-  Future<void> pumpApp(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1080, 2340);
+  Future<void> pumpApp(WidgetTester tester, {bool tall = false}) async {
+    tester.view.physicalSize = Size(1080, tall ? 7000 : 2340);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     tester.platformDispatcher.accessibilityFeaturesTestValue =
@@ -216,7 +235,7 @@ void main() {
   testWidgets('changing the role goes back to the registration', (
     tester,
   ) async {
-    await pumpApp(tester);
+    await pumpApp(tester, tall: true);
     await tester.enterText(
       find.byKey(const Key('registration.fullName')),
       'María Quispe',
@@ -244,7 +263,7 @@ void main() {
   testWidgets('a brigadist with an account signs in from the registration', (
     tester,
   ) async {
-    await pumpApp(tester);
+    await pumpApp(tester, tall: true);
 
     await tester.ensureVisible(
       find.text('¿Ya tienes cuenta institucional? Inicia sesión'),
