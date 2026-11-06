@@ -138,9 +138,12 @@ class AppDatabase {
   Future<int> sizeInBytes() async {
     final pages = await db.rawQuery('PRAGMA page_count');
     final pageSize = await db.rawQuery('PRAGMA page_size');
-    return (pages.first.values.first! as int) *
-        (pageSize.first.values.first! as int);
+    return _int(pages.first.values.first) * _int(pageSize.first.values.first);
   }
+
+  /// SQLCipher on Android returns PRAGMA values as text; SQLite as integers.
+  static int _int(Object? value) =>
+      value is int ? value : int.tryParse('$value') ?? 0;
 
   /// SQLite integrity check, for "Integridad" (A_06).
   Future<bool> isIntact() async {

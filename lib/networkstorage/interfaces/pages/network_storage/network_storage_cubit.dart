@@ -84,8 +84,12 @@ class NetworkStorageCubit extends Cubit<NetworkStorageState> {
   }
 
   Future<void> refreshStats() async {
-    final stats = await _stats.read();
-    if (!isClosed) emit(state.copyWith(stats: stats));
+    try {
+      final stats = await _stats.read();
+      if (!isClosed) emit(state.copyWith(stats: stats));
+    } on Object {
+      // A failed reading keeps the previous figures on screen.
+    }
   }
 
   Future<void> download(MapRegion region) async {
