@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../emergencymanagement/application/citizen_report_sync.dart';
 import '../../emergencymanagement/application/quick_evidence.dart';
 import '../../emergencymanagement/application/sos_service.dart';
 import '../../emergencymanagement/interfaces/pages/emergency_detail/emergency_detail_cubit.dart';
 import '../../emergencymanagement/interfaces/pages/emergency_detail/emergency_detail_screen.dart';
+import '../../emergencymanagement/interfaces/pages/my_reports/my_reports_cubit.dart';
 import '../../emergencymanagement/interfaces/pages/my_reports/my_reports_screen.dart';
 import '../../emergencymanagement/interfaces/pages/sos/sos_cubit.dart';
 import '../../emergencymanagement/interfaces/pages/sos/sos_screen.dart';
@@ -166,7 +168,18 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
               ),
             ],
           ),
-          _branch(AppRoutes.citizenReports, const MyReportsScreen()),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.citizenReports,
+                builder: (context, state) => BlocProvider(
+                  create: (_) =>
+                      MyReportsCubit(getIt<MyReportsService>())..start(),
+                  child: const MyReportsScreen(),
+                ),
+              ),
+            ],
+          ),
           _branch(AppRoutes.citizenSettings, const NetworkStorageScreen()),
         ],
       ),

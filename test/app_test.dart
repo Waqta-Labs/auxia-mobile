@@ -6,6 +6,7 @@ import 'package:auxia_mobile/core/location/location_service.dart';
 import 'package:auxia_mobile/core/routing/app_router.dart';
 import 'package:auxia_mobile/core/sync/outbox_repository.dart';
 import 'package:auxia_mobile/core/sync/sync_cubit.dart';
+import 'package:auxia_mobile/emergencymanagement/application/citizen_report_sync.dart';
 import 'package:auxia_mobile/emergencymanagement/application/quick_evidence.dart';
 import 'package:auxia_mobile/emergencymanagement/application/sos_service.dart';
 import 'package:auxia_mobile/emergencymanagement/infrastructure/persistence/sqlite_citizen_report_repository.dart';
@@ -32,9 +33,14 @@ void main() {
   setUp(() async {
     await getIt.reset();
     final db = await openTestDatabase();
-    getIt.registerSingleton<SosService>(
-      SosService(SqliteCitizenReportRepository(db), OutboxRepository(db)),
-    );
+    final citizenReports = SqliteCitizenReportRepository(db);
+    getIt
+      ..registerSingleton<SosService>(
+        SosService(citizenReports, OutboxRepository(db)),
+      )
+      ..registerSingleton<MyReportsService>(
+        MyReportsService(citizenReports, FakeCitizenReportGateway()),
+      );
     repository = InMemoryProfileRepository();
     final service = ProfileService(repository);
     gateway = FakeAuthenticationGateway();

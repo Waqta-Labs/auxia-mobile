@@ -1,18 +1,25 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:auxia_mobile/core/config/app_config.dart';
 import 'package:auxia_mobile/core/connectivity/connectivity_monitor.dart';
 import 'package:auxia_mobile/core/database/app_database.dart';
 import 'package:auxia_mobile/core/failure.dart';
 import 'package:auxia_mobile/core/location/location_service.dart';
+import 'package:auxia_mobile/core/network/api_client.dart';
 import 'package:auxia_mobile/core/sync/sync_engine.dart';
 import 'package:auxia_mobile/core/theme/app_theme.dart';
 import 'package:auxia_mobile/emergencymanagement/application/quick_evidence.dart';
+import 'package:auxia_mobile/emergencymanagement/domain/model/citizen_report.dart';
+import 'package:auxia_mobile/emergencymanagement/domain/repositories/citizen_report_gateway.dart';
 import 'package:auxia_mobile/identityaccess/domain/model/local_profile.dart';
 import 'package:auxia_mobile/identityaccess/domain/model/session.dart';
 import 'package:auxia_mobile/identityaccess/domain/repositories/profile_repository.dart';
 import 'package:auxia_mobile/identityaccess/domain/repositories/session_repository.dart';
 import 'package:auxia_mobile/l10n/generated/app_localizations.dart';
 import 'package:auxia_mobile/shared/domain/geo_point.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:fpdart/fpdart.dart';
@@ -192,4 +199,64 @@ class FakeQuickEvidence implements QuickEvidence {
     recording = false;
     return '/evidence/audio.m4a';
   }
+}
+
+/// HTTP adapter that answers by "METHOD path" and records the requests.
+class FakeHttpAdapter implements HttpClientAdapter {
+  FakeHttpAdapter(this.routes);
+
+  /// "POST /api/v1/x" → (status, json body).
+  final Map<String, (int, Object?)> routes;
+  final List<RequestOptions> requests = [];
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    requests.add(options);
+    final key = '${options.method} ${options.uri.path}';
+    final (status, body) = routes[key] ?? (404, {'detail': 'Not Found'});
+    return ResponseBody.fromString(
+      jsonEncode(body),
+      status,
+      headers: {
+        Headers.contentTypeHeader: ['application/json'],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+/// API client over a [FakeHttpAdapter].
+ApiClient fakeApiClient(FakeHttpAdapter adapter, {String? token}) => ApiClient(
+  config: const AppConfig(apiBaseUrl: 'https://api.test'),
+  accessToken: () async => token,
+  language: () => 'es',
+  dio: Dio()..httpClientAdapter = adapter,
+);
+
+/// Citizen report gateway with scripted answers.
+class FakeCitizenReportGateway implements CitizenReportGateway {
+  Either<Failure, Unit> submitResult = const Right(unit);
+  final Map<String, Either<Failure, RemoteReportStatus>> statuses = {};
+  final List<(String, String)> submitted = [];
+
+  @override
+  Future<Either<Failure, Unit>> submit(
+    CitizenReport report, {
+    String? clientReportId,
+    String? text,
+    CitizenReport? relatedReport,
+  }) async {
+    submitted.add((clientReportId ?? report.id, text ?? report.toReportText()));
+    return submitResult;
+  }
+
+  @override
+  Future<Either<Failure, RemoteReportStatus>> status(String id) async =>
+      statuses[id] ?? const Left(NetworkFailure());
 }

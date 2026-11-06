@@ -247,5 +247,80 @@
         "type": "String"
       }
     }
+  },
+  "reportsChannels": "Canales de sincronización",
+  "channelCellular": "Celular",
+  "channelWifi": "Wi-Fi",
+  "channelMesh": "Mesh",
+  "channelSatellite": "Satélite",
+  "channelUnavailable": "{channel} · no disponible",
+  "@channelUnavailable": {
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "actionForceRetry": "Forzar reintento de sincronización",
+  "reportsQueue": "{count, plural, =1{Cola local · 1 reporte} other{Cola local · {count} reportes}}",
+  "@reportsQueue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportTitle": "{code} · {category}",
+  "@reportTitle": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "statusSaved": "Guardado en dispositivo",
+  "statusTransmitting": "Transmitiendo…",
+  "statusReceived": "Recibido · en priorización",
+  "statusPrioritized": "Priorizado por IA · {score}",
+  "@statusPrioritized": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "statusPrioritizedNoScore": "Priorizado por IA",
+  "statusBrigade": "Brigada en camino · ETA {minutes} min",
+  "@statusBrigade": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "statusBrigadeNoEta": "Brigada en camino",
+  "reportNoLocation": "Sin ubicación GPS",
+  "reportEvidenceSaved": "Evidencia guardada en tu dispositivo",
+  "reportPeople": "{label}: {count}",
+  "@reportPeople": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportProgress": "Paso {step} de 4",
+  "@reportProgress": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      }
+    }
   }
 }
