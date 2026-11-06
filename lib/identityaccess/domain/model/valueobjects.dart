@@ -20,6 +20,9 @@ enum InvalidValueReason {
   organizationRequired,
   brigadeCodeRequired,
   brigadeCodeInvalid,
+  emailRequired,
+  emailInvalid,
+  passwordRequired,
 }
 
 /// Full name of the person using the app.
@@ -114,4 +117,46 @@ final class BrigadeCode extends Equatable {
 
   @override
   List<Object> get props => [value];
+}
+
+/// Institutional e-mail of an account created by the organization
+/// administrator, such as m.quispe@coerlima.gob.pe.
+final class InstitutionalEmail extends Equatable {
+  factory InstitutionalEmail(String raw) {
+    final value = raw.trim().toLowerCase();
+    if (value.isEmpty) {
+      throw const InvalidValueException(InvalidValueReason.emailRequired);
+    }
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value)) {
+      throw const InvalidValueException(InvalidValueReason.emailInvalid);
+    }
+    return InstitutionalEmail._(value);
+  }
+
+  const InstitutionalEmail._(this.value);
+
+  final String value;
+
+  @override
+  List<Object> get props => [value];
+}
+
+/// Password typed on the sign-in screen. It is never stored.
+final class Password extends Equatable {
+  factory Password(String raw) {
+    if (raw.isEmpty) {
+      throw const InvalidValueException(InvalidValueReason.passwordRequired);
+    }
+    return Password._(raw);
+  }
+
+  const Password._(this.value);
+
+  final String value;
+
+  @override
+  List<Object> get props => [value];
+
+  @override
+  String toString() => 'Password(***)';
 }

@@ -14,5 +14,8 @@ extension InvalidValueMessage on InvalidValueReason {
     InvalidValueReason.brigadeCodeRequired =>
       l10n.validationBrigadeCodeRequired,
     InvalidValueReason.brigadeCodeInvalid => l10n.validationBrigadeCodeInvalid,
+    InvalidValueReason.emailRequired => l10n.validationEmailRequired,
+    InvalidValueReason.emailInvalid => l10n.validationEmailInvalid,
+    InvalidValueReason.passwordRequired => l10n.validationPasswordRequired,
   };
 }
