@@ -18,6 +18,10 @@ import 'package:auxia_mobile/identityaccess/interfaces/profile_cubit.dart';
 import 'package:auxia_mobile/resourcemanagement/application/mission_service.dart';
 import 'package:auxia_mobile/resourcemanagement/infrastructure/device/navigation_launcher.dart';
 import 'package:auxia_mobile/resourcemanagement/infrastructure/persistence/sqlite_mission_cache.dart';
+import 'package:auxia_mobile/traceability/application/delivery_evidence.dart';
+import 'package:auxia_mobile/traceability/application/delivery_service.dart';
+import 'package:auxia_mobile/traceability/infrastructure/device/explorer_launcher.dart';
+import 'package:auxia_mobile/traceability/infrastructure/persistence/sqlite_delivery_record_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
@@ -52,6 +56,15 @@ void main() {
         ),
       )
       ..registerSingleton<NavigationLauncher>(NavigationLauncher())
+      ..registerSingleton<DeliveryService>(
+        DeliveryService(
+          SqliteDeliveryRecordRepository(db),
+          OutboxRepository(db),
+          FakeDeliveryGateway(),
+        ),
+      )
+      ..registerSingleton<DeliveryEvidence>(FakeDeliveryEvidence())
+      ..registerSingleton<ExplorerLauncher>(ExplorerLauncher())
       ..registerSingleton<AppConfig>(
         const AppConfig(
           apiBaseUrl: 'https://api.test',

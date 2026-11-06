@@ -450,5 +450,75 @@
       }
     }
   },
-  "navigationUnavailable": "No pudimos abrir la navegación en este dispositivo."
+  "navigationUnavailable": "No pudimos abrir la navegación en este dispositivo.",
+  "deliveryStepScan": "1 · Escaneo",
+  "deliveryStepEvidence": "2 · Evidencia",
+  "deliveryStepBlockchain": "3 · Blockchain",
+  "deliveryScanHint": "Apunta la cámara al código QR del paquete.",
+  "deliveryManualCode": "Ingresar el código a mano",
+  "deliveryCodeLabel": "Código de la entrega",
+  "actionConfirm": "Confirmar",
+  "deliveryWrongQr": "Este código no corresponde a esta entrega.",
+  "deliveryCameraUnavailable": "La cámara no está disponible. Ingresa el código a mano.",
+  "deliveryPackage": "Entrega {code} · {zone}",
+  "@deliveryPackage": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "zone": {
+        "type": "String"
+      }
+    }
+  },
+  "deliveryRoute": "Almacén → {brigade} → Beneficiario",
+  "@deliveryRoute": {
+    "placeholders": {
+      "brigade": {
+        "type": "String"
+      }
+    }
+  },
+  "deliveryQuantities": "Cantidades entregadas",
+  "deliverySignature": "Firma del beneficiario",
+  "deliverySignatureHint": "Toca para firmar",
+  "deliveryPhoto": "Foto de recepción",
+  "deliveryPhotoHint": "Toca para tomar la foto",
+  "actionClear": "Limpiar",
+  "actionSave": "Guardar",
+  "actionRegisterDelivery": "Registrar entrega",
+  "deliveryEvidenceMissing": "Falta la firma del beneficiario o la foto de recepción.",
+  "deliveryQueued": "Entrega guardada · se registrará al detectar señal",
+  "deliveryAnchoring": "Registrada · anclando el hash en Blockchain…",
+  "deliveryAnchored": "Validado e Inmutable en Blockchain",
+  "deliveryAnchorFailed": "Registrada · el servidor reintentará el anclaje en Blockchain",
+  "deliveryRejected": "El Centro de Mando no aceptó la entrega: {reason}",
+  "@deliveryRejected": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "deliveryChain": "Entrega {code} · Almacén → Brigada → Beneficiario",
+  "@deliveryChain": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "deliveryHash": "Hash del registro",
+  "deliveryTransaction": "Ver transacción en Sepolia",
+  "deliveryAnchoredAgo": "Anclado {ago}",
+  "@deliveryAnchoredAgo": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
+  "actionNextMission": "Siguiente misión",
+  "actionRefreshStatus": "Actualizar estado",
+  "actionScanAgain": "Escanear de nuevo"
 }

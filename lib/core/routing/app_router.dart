@@ -32,11 +32,16 @@ import '../../resourcemanagement/interfaces/pages/missions/missions_cubit.dart';
 import '../../resourcemanagement/interfaces/pages/missions/missions_screen.dart';
 import '../../shared/interfaces/pages/startup/startup_screen.dart';
 import '../../shared/interfaces/widgets/role_navigation_shell.dart';
+import '../../traceability/application/delivery_evidence.dart';
+import '../../traceability/application/delivery_service.dart';
+import '../../traceability/infrastructure/device/explorer_launcher.dart';
+import '../../traceability/interfaces/pages/delivery/delivery_cubit.dart';
 import '../../traceability/interfaces/pages/delivery/delivery_screen.dart';
 import '../config/app_config.dart';
 import '../di/service_locator.dart';
 import '../location/location_service.dart';
 import '../sync/sync_cubit.dart';
+import 'delivery_tab.dart';
 
 /// Paths of the app. Each screen of the report gets its own constant.
 abstract final class AppRoutes {
@@ -256,7 +261,30 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
               ),
             ],
           ),
-          _branch(AppRoutes.brigadeDelivery, const DeliveryScreen()),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.brigadeDelivery,
+                builder: (context, state) => DeliveryTab(
+                  missionId: state.uri.queryParameters['mission'],
+                  missions: getIt<MissionService>(),
+                  builder: (order) => DeliveryScreen(
+                    order: order,
+                    createCubit: (order) => DeliveryCubit(
+                      getIt<DeliveryService>(),
+                      getIt<DeliveryEvidence>(),
+                      getIt<LocationService>(),
+                      order: order,
+                      onRegistered: getIt<MissionService>().complete,
+                    ),
+                    onNextMission: () => context.go(AppRoutes.brigadeMissions),
+                    onOpenTransaction:
+                        getIt<ExplorerLauncher>().openTransaction,
+                  ),
+                ),
+              ),
+            ],
+          ),
           _branch(AppRoutes.brigadeSettings, const NetworkStorageScreen()),
         ],
       ),
