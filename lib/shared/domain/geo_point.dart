@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:equatable/equatable.dart';
 
 /// GPS coordinates in decimal degrees (WGS 84), as the backend uses them.
@@ -13,6 +15,20 @@ final class GeoPoint extends Equatable {
   String format({int decimals = 4}) =>
       '${latitude.toStringAsFixed(decimals)}, '
       '${longitude.toStringAsFixed(decimals)}';
+
+  /// Great-circle distance in kilometers (haversine).
+  double distanceKmTo(GeoPoint other) {
+    const earthRadiusKm = 6371.0;
+    double rad(double degrees) => degrees * math.pi / 180;
+    final dLat = rad(other.latitude - latitude);
+    final dLon = rad(other.longitude - longitude);
+    final a =
+        math.pow(math.sin(dLat / 2), 2) +
+        math.cos(rad(latitude)) *
+            math.cos(rad(other.latitude)) *
+            math.pow(math.sin(dLon / 2), 2);
+    return 2 * earthRadiusKm * math.asin(math.sqrt(a));
+  }
 
   Map<String, Object?> toJson() => {
     'latitude': latitude,

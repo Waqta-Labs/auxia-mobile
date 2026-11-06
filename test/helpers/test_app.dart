@@ -18,6 +18,8 @@ import 'package:auxia_mobile/identityaccess/domain/model/session.dart';
 import 'package:auxia_mobile/identityaccess/domain/repositories/profile_repository.dart';
 import 'package:auxia_mobile/identityaccess/domain/repositories/session_repository.dart';
 import 'package:auxia_mobile/l10n/generated/app_localizations.dart';
+import 'package:auxia_mobile/resourcemanagement/domain/model/mission.dart';
+import 'package:auxia_mobile/resourcemanagement/domain/repositories/mission_ports.dart';
 import 'package:auxia_mobile/shared/domain/geo_point.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -259,4 +261,77 @@ class FakeCitizenReportGateway implements CitizenReportGateway {
   @override
   Future<Either<Failure, RemoteReportStatus>> status(String id) async =>
       statuses[id] ?? const Left(NetworkFailure());
+}
+
+/// Mission of the examples: Sector Santa Rosa, score 94.
+Mission sampleMission({
+  String id = 'delivery-1',
+  MissionStatus status = MissionStatus.assigned,
+}) => Mission(
+  id: id,
+  brigadeId: 'brigade-alfa',
+  brigadeName: 'Brigada Alfa',
+  planId: 'plan-1',
+  zoneId: 'zone-1',
+  zoneName: 'Sector Santa Rosa',
+  priority: PriorityLevel.critical,
+  status: status,
+  location: const GeoPoint(-12.0432, -77.0428),
+  score: 94,
+  damage: DamageLevel.severe,
+  people: const ZonePeople(
+    peopleAffected: 120,
+    children: 3,
+    elderly: 1,
+    disabled: 2,
+  ),
+  reasons: const [
+    ScoreReason(ScoreFeature.vulnerablePopulation, 18.5),
+    ScoreReason(ScoreFeature.damageLevel, 30),
+  ],
+  items: const [
+    MissionItem(
+      resourceId: 'r1',
+      name: 'Kit de víveres',
+      quantity: 12,
+      unit: 'KIT',
+    ),
+  ],
+  assignedAt: DateTime.now().subtract(const Duration(hours: 4)),
+);
+
+/// Mission gateway with a fixed brigade list and mission.
+class FakeMissionGateway implements MissionGateway {
+  FakeMissionGateway({List<BrigadeSummary>? brigades, this.mission})
+    : brigadeList =
+          brigades ??
+          const [
+            BrigadeSummary(
+              id: 'brigade-alfa',
+              name: 'Brigada Alfa',
+              memberNames: ['Cap. M. Quispe'],
+              distributionPlanId: 'plan-1',
+            ),
+          ];
+
+  List<BrigadeSummary> brigadeList;
+  Mission? mission;
+  Failure? failure;
+
+  @override
+  Future<Either<Failure, List<BrigadeSummary>>> brigades() async =>
+      failure != null ? Left(failure!) : Right(brigadeList);
+
+  @override
+  Future<Either<Failure, BrigadeSummary>> brigade(String brigadeId) async {
+    if (failure != null) return Left(failure!);
+    for (final brigade in brigadeList) {
+      if (brigade.id == brigadeId) return Right(brigade);
+    }
+    return const Left(NotFoundFailure());
+  }
+
+  @override
+  Future<Either<Failure, Mission?>> missionFor(BrigadeSummary brigade) async =>
+      failure != null ? Left(failure!) : Right(mission);
 }

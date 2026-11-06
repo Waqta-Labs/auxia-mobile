@@ -1,4 +1,5 @@
 import 'package:auxia_mobile/app.dart';
+import 'package:auxia_mobile/core/config/app_config.dart';
 import 'package:auxia_mobile/core/di/service_locator.dart';
 import 'package:auxia_mobile/core/failure.dart';
 import 'package:auxia_mobile/core/localization/locale_cubit.dart';
@@ -14,6 +15,9 @@ import 'package:auxia_mobile/identityaccess/application/auth_service.dart';
 import 'package:auxia_mobile/identityaccess/application/profile_service.dart';
 import 'package:auxia_mobile/identityaccess/infrastructure/device/id_card_camera.dart';
 import 'package:auxia_mobile/identityaccess/interfaces/profile_cubit.dart';
+import 'package:auxia_mobile/resourcemanagement/application/mission_service.dart';
+import 'package:auxia_mobile/resourcemanagement/infrastructure/device/navigation_launcher.dart';
+import 'package:auxia_mobile/resourcemanagement/infrastructure/persistence/sqlite_mission_cache.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
@@ -40,6 +44,19 @@ void main() {
       )
       ..registerSingleton<MyReportsService>(
         MyReportsService(citizenReports, FakeCitizenReportGateway()),
+      )
+      ..registerSingleton<MissionService>(
+        MissionService(
+          FakeMissionGateway(mission: null),
+          SqliteMissionCache(db),
+        ),
+      )
+      ..registerSingleton<NavigationLauncher>(NavigationLauncher())
+      ..registerSingleton<AppConfig>(
+        const AppConfig(
+          apiBaseUrl: 'https://api.test',
+          mapTileUrlTemplate: null,
+        ),
       );
     repository = InMemoryProfileRepository();
     final service = ProfileService(repository);

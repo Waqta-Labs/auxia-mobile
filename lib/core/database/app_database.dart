@@ -59,6 +59,22 @@ class AppDatabase {
       )
       ''',
     ],
+    // Version 3: missions of the brigadist cached for offline work (A_07).
+    [
+      '''
+      CREATE TABLE missions (
+        id TEXT PRIMARY KEY,
+        json TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      )
+      ''',
+      '''
+      CREATE TABLE key_values (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+      ''',
+    ],
   ];
 
   static int get version => migrations.length;
