@@ -168,5 +168,84 @@
       }
     }
   },
-  "syncInProgress": "Sincronizando"
+  "syncInProgress": "Sincronizando",
+  "sosButton": "SOS",
+  "sosOneTap": "1 toque",
+  "sosButtonSemantics": "Pedir auxilio: enviar SOS de {category}",
+  "@sosButtonSemantics": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryMedical": "Médico",
+  "categoryRescue": "Rescate",
+  "categorySupplies": "Víveres",
+  "gpsSaved": "GPS {coordinates} · guardado",
+  "@gpsSaved": {
+    "placeholders": {
+      "coordinates": {
+        "type": "String"
+      }
+    }
+  },
+  "gpsLocating": "Buscando señal GPS…",
+  "gpsUnavailable": "GPS no disponible · el SOS se envía sin ubicación",
+  "gpsPermissionDenied": "Activa la ubicación para enviar tu posición con el SOS",
+  "sosQueue": "{count, plural, =0{Sin reportes en cola} =1{1 reporte en cola · sincroniza al conectar} other{{count} reportes en cola · sincroniza al conectar}}",
+  "@sosQueue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "detailTitle": "Detalle de emergencia",
+  "detailIntro": "Opcional · Si no tienes tiempo, toca Enviar. Todo se guarda sin señal.",
+  "detailWhoNeedsHelp": "¿Quiénes necesitan ayuda?",
+  "detailChildren": "Niños",
+  "detailElderly": "Adultos mayores",
+  "detailInjured": "Heridos",
+  "detailAccess": "Estado de acceso",
+  "accessRoadBlocked": "Vía bloqueada",
+  "accessNoDrinkingWater": "Sin agua potable",
+  "accessNoCellSignal": "Sin señal celular",
+  "accessDamagedBuilding": "Edificio dañado",
+  "detailEvidence": "Evidencia rápida (opcional)",
+  "evidenceAudio": "Audio · 5 s",
+  "evidenceAudioHint": "Mantén para grabar",
+  "evidenceAudioRecording": "Grabando… suelta para terminar",
+  "evidenceAudioSaved": "Audio guardado",
+  "evidencePhoto": "Foto rápida",
+  "evidencePhotoHint": "1 toque",
+  "evidencePhotoSaved": "Foto guardada",
+  "actionSaveAndSend": "Guardar y Enviar Auxilio",
+  "detailFootnote": "Se guarda en tu dispositivo y se envía al detectar señal",
+  "counterDecrease": "Quitar uno de {label}",
+  "@counterDecrease": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "counterIncrease": "Agregar uno a {label}",
+  "@counterIncrease": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "microphoneDenied": "Activa el permiso del micrófono para grabar el audio.",
+  "cameraError": "No pudimos abrir la cámara.",
+  "sosSavedChip": "SOS {code} guardado",
+  "@sosSavedChip": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  }
 }

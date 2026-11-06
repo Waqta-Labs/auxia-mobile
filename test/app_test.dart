@@ -2,8 +2,13 @@ import 'package:auxia_mobile/app.dart';
 import 'package:auxia_mobile/core/di/service_locator.dart';
 import 'package:auxia_mobile/core/failure.dart';
 import 'package:auxia_mobile/core/localization/locale_cubit.dart';
+import 'package:auxia_mobile/core/location/location_service.dart';
 import 'package:auxia_mobile/core/routing/app_router.dart';
+import 'package:auxia_mobile/core/sync/outbox_repository.dart';
 import 'package:auxia_mobile/core/sync/sync_cubit.dart';
+import 'package:auxia_mobile/emergencymanagement/application/quick_evidence.dart';
+import 'package:auxia_mobile/emergencymanagement/application/sos_service.dart';
+import 'package:auxia_mobile/emergencymanagement/infrastructure/persistence/sqlite_citizen_report_repository.dart';
 import 'package:auxia_mobile/identityaccess/application/auth_service.dart';
 import 'package:auxia_mobile/identityaccess/application/profile_service.dart';
 import 'package:auxia_mobile/identityaccess/infrastructure/device/id_card_camera.dart';
@@ -26,6 +31,10 @@ void main() {
 
   setUp(() async {
     await getIt.reset();
+    final db = await openTestDatabase();
+    getIt.registerSingleton<SosService>(
+      SosService(SqliteCitizenReportRepository(db), OutboxRepository(db)),
+    );
     repository = InMemoryProfileRepository();
     final service = ProfileService(repository);
     gateway = FakeAuthenticationGateway();
@@ -37,6 +46,8 @@ void main() {
       ..registerSingleton<ProfileService>(service)
       ..registerSingleton<AuthService>(auth)
       ..registerSingleton<SyncCubit>(SyncCubit(FakeSyncController()))
+      ..registerSingleton<LocationService>(FakeLocationService())
+      ..registerSingleton<QuickEvidence>(FakeQuickEvidence())
       ..registerSingleton<IdCardCamera>(_FakeCamera());
   });
 
@@ -44,6 +55,9 @@ void main() {
     tester.view.physicalSize = const Size(1080, 2340);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     await tester.pumpWidget(
       AuxiaApp(
         router: createAppRouter(profileCubit: profileCubit),
@@ -84,6 +98,44 @@ void main() {
     expect(find.text('Solicitar Auxilio Urgente'), findsOneWidget);
     expect(find.text('Mis reportes'), findsOneWidget);
     expect(find.text('Ajustes'), findsOneWidget);
+  });
+
+  testWidgets('a citizen sends an SOS with detail and sees Mis reportes', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    await tester.enterText(
+      find.byKey(const Key('registration.fullName')),
+      'María Quispe',
+    );
+    await tester.enterText(
+      find.byKey(const Key('registration.phone')),
+      '987654321',
+    );
+    await tester.tap(find.text('Continuar'));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('GPS -12.0464, -77.0428 · guardado'),
+      200,
+    );
+    await tester.tap(find.text('Rescate'));
+    await tester.pump();
+    await tester.tap(
+      find.bySemanticsLabel('Pedir auxilio: enviar SOS de Rescate'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Detalle de emergencia'), findsOneWidget);
+    await tester.tap(find.byTooltip('Agregar uno a Niños'));
+    await tester.tap(find.text('Vía bloqueada'));
+    await tester.pump();
+    expect(find.text('1'), findsWidgets);
+
+    await tester.tap(find.text('Guardar y Enviar Auxilio'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mis reportes'), findsWidgets);
   });
 
   testWidgets('a brigadist sends the credential and lands on missions', (
