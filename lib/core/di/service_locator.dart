@@ -1,10 +1,14 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 
+import '../../identityaccess/application/auth_service.dart';
 import '../../identityaccess/application/profile_service.dart';
 import '../../identityaccess/domain/repositories/profile_repository.dart';
+import '../../identityaccess/domain/repositories/session_repository.dart';
+import '../../identityaccess/infrastructure/api/http_authentication_gateway.dart';
 import '../../identityaccess/infrastructure/device/id_card_camera.dart';
 import '../../identityaccess/infrastructure/persistence/secure_profile_repository.dart';
+import '../../identityaccess/infrastructure/persistence/secure_session_repository.dart';
 import '../../identityaccess/interfaces/profile_cubit.dart';
 import '../config/app_config.dart';
 import '../localization/locale_cubit.dart';
@@ -24,7 +28,7 @@ Future<void> configureDependencies({AppConfig? config}) async {
     ..registerLazySingleton<ApiClient>(
       () => ApiClient(
         config: appConfig,
-        accessToken: () async => null,
+        accessToken: () => getIt<AuthService>().accessToken(),
         language: () => getIt<LocaleCubit>().languageTag,
       ),
     )
@@ -32,7 +36,16 @@ Future<void> configureDependencies({AppConfig? config}) async {
     ..registerLazySingleton<ProfileRepository>(
       () => SecureProfileRepository(getIt()),
     )
+    ..registerLazySingleton<SessionRepository>(
+      () => SecureSessionRepository(getIt()),
+    )
+    ..registerLazySingleton<AuthenticationGateway>(
+      () => HttpAuthenticationGateway(getIt()),
+    )
     ..registerLazySingleton<ProfileService>(() => ProfileService(getIt()))
+    ..registerLazySingleton<AuthService>(
+      () => AuthService(getIt(), getIt(), getIt()),
+    )
     ..registerLazySingleton<IdCardCamera>(IdCardCamera.new)
-    ..registerSingleton<ProfileCubit>(ProfileCubit(getIt()));
+    ..registerSingleton<ProfileCubit>(ProfileCubit(getIt(), getIt()));
 }

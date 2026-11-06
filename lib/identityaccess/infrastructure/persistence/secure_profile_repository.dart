@@ -36,7 +36,7 @@ class SecureProfileRepository implements ProfileRepository {
 extension ProfileJson on LocalProfile {
   Map<String, Object?> toJson() => {
     'fullName': fullName.value,
-    'phone': phone.value,
+    'phone': phone?.value,
     'role': role.name,
     'createdAt': createdAt.toIso8601String(),
     if (credential case final credential?)
@@ -52,7 +52,10 @@ extension ProfileJson on LocalProfile {
   static LocalProfile fromJson(Map<String, Object?> json) {
     final profile = LocalProfile(
       fullName: FullName(json['fullName']! as String),
-      phone: PhoneNumber(json['phone']! as String),
+      phone: switch (json['phone']) {
+        final String phone => PhoneNumber(phone),
+        _ => null,
+      },
       role: UserRole.fromName(json['role']! as String),
       createdAt: DateTime.parse(json['createdAt']! as String),
     );

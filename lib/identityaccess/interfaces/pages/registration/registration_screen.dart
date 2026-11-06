@@ -15,10 +15,17 @@ import 'registration_cubit.dart';
 
 /// A_01 · Registro y selección de rol.
 class RegistrationScreen extends StatelessWidget {
-  const RegistrationScreen({super.key, required this.onContinueToCredential});
+  const RegistrationScreen({
+    super.key,
+    required this.onContinueToCredential,
+    required this.onSignIn,
+  });
 
   /// Opens A_02 with the validated name and phone.
   final void Function(PendingRegistration pending) onContinueToCredential;
+
+  /// "¿Ya tienes cuenta institucional? Inicia sesión" opens A_10.
+  final VoidCallback onSignIn;
 
   @override
   Widget build(BuildContext context) {
@@ -123,6 +130,13 @@ class RegistrationScreen extends StatelessWidget {
                 FilledButton(
                   onPressed: state.submitting ? null : cubit.submit,
                   child: Text(l10n.actionContinue),
+                ),
+                TextButton(
+                  onPressed: onSignIn,
+                  child: Text(
+                    l10n.registrationHaveAccount,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
                 Text(
                   l10n.registrationLocalNote,

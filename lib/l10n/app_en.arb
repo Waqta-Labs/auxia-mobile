@@ -8,11 +8,9 @@
   "errorUnexpected": "Something went wrong. Please try again.",
   "errorNoConnection": "No connection. We saved it and will send it when the signal returns.",
   "errorSessionExpired": "Your session expired. Sign in again to sync.",
-
   "actionContinue": "Continue",
   "actionBack": "Back",
   "actionCancel": "Cancel",
-
   "registrationTitle": "Create your account",
   "registrationSubtitle": "Choose your role. It defines what you will see and do.",
   "fullNameLabel": "Full name",
@@ -28,7 +26,6 @@
   "roleBrigadistBenefitBlockchain": "Verify deliveries on Blockchain",
   "roleBrigadistApproval": "Requires Command Center approval",
   "registrationLocalNote": "Your data is stored on your device",
-
   "validationNameRequired": "Enter your full name.",
   "validationNameTooShort": "The name is too short.",
   "validationNameTooLong": "The name is too long.",
@@ -37,7 +34,6 @@
   "validationOrganizationRequired": "Enter your organization.",
   "validationBrigadeCodeRequired": "Enter your brigade code.",
   "validationBrigadeCodeInvalid": "Use letters, numbers and hyphens, for example BRG-ALFA-07.",
-
   "credentialTitle": "Brigade credential",
   "credentialStep": "Step 2 of 2 · Verify that you belong to a response organization.",
   "organizationLabel": "Organization",
@@ -53,29 +49,42 @@
   "actionSendForApproval": "Send for approval",
   "actionBackChangeRole": "Go back and change role",
   "idCardCameraError": "We could not open the camera. You can send the credential without the ID card.",
-
   "navSos": "SOS",
   "navMyReports": "My reports",
   "navSettings": "Settings",
   "navMissions": "Missions",
   "navDelivery": "Delivery",
-
   "sosTitle": "Request Urgent Help",
   "sosSubtitle": "One tap. No signal needed.",
-
   "reportsTitle": "My reports",
   "reportsEmpty": "You have not sent any reports yet. Use the SOS button when you need help.",
-
   "missionsAssigned": "Assigned missions",
   "missionsPendingTitle": "Your account is pending approval",
   "missionsPendingDetail": "When your organization creates your institutional account, sign in to receive the missions the Command Center assigns to you.",
-
   "deliveryTitle": "Verify delivery",
   "deliveryEmpty": "You have no delivery in progress. Start navigating to a mission to verify its delivery.",
-
   "settingsTitle": "Network and storage",
   "actionChangeRole": "Change role",
   "changeRoleConfirmTitle": "Change role?",
   "changeRoleConfirmBody": "Your profile will be removed from this device and you will go back to the registration screen.",
-  "actionConfirmChangeRole": "Change role"
+  "actionConfirmChangeRole": "Change role",
+  "registrationHaveAccount": "Already have an institutional account? Sign in",
+  "signInTitle": "Sign in",
+  "signInSubtitle": "Field app for brigades. Use the account your organization gave you.",
+  "emailLabel": "Institutional e-mail",
+  "passwordLabel": "Password",
+  "actionShowPassword": "Show password",
+  "actionHidePassword": "Hide password",
+  "actionSignIn": "Sign in",
+  "signInOfflineNote": "Works without signal after the first sign-in",
+  "signInNotFieldBrigade": "This account does not belong to a field brigade. Use the Command Center on the web.",
+  "signInNoConnection": "You need signal for the first sign-in. After that, the app works offline.",
+  "validationEmailRequired": "Enter your institutional e-mail.",
+  "validationEmailInvalid": "Enter a valid e-mail, for example m.quispe@coerlima.gob.pe.",
+  "validationPasswordRequired": "Enter your password.",
+  "actionGoToSignIn": "Sign in",
+  "actionSignOut": "Sign out",
+  "signOutConfirmTitle": "Sign out?",
+  "signOutConfirmBody": "You will stop receiving missions on this device until you sign in again.",
+  "missionsEmpty": "You have no assigned missions. They will appear here when the Command Center dispatches your brigade."
 }

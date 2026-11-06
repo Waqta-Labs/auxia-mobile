@@ -11,9 +11,9 @@ import 'valueobjects.dart';
 final class LocalProfile extends Equatable {
   const LocalProfile({
     required this.fullName,
-    required this.phone,
     required this.role,
     required this.createdAt,
+    this.phone,
     this.credential,
   });
 
@@ -30,13 +30,33 @@ final class LocalProfile extends Equatable {
     createdAt: now,
   );
 
+  /// Brigadist who skipped A_01 and signed in with the institutional
+  /// account (A_10): the name comes from the account, without phone.
+  factory LocalProfile.fromInstitutionalAccount({
+    required FullName fullName,
+    required DateTime now,
+  }) => LocalProfile(
+    fullName: fullName,
+    role: UserRole.brigadist,
+    createdAt: now,
+  );
+
   final FullName fullName;
-  final PhoneNumber phone;
+  final PhoneNumber? phone;
   final UserRole role;
   final DateTime createdAt;
   final BrigadeCredential? credential;
 
   bool get isBrigadist => role == UserRole.brigadist;
+
+  /// Same profile with the name of the institutional account.
+  LocalProfile renamed(FullName name) => LocalProfile(
+    fullName: name,
+    phone: phone,
+    role: role,
+    createdAt: createdAt,
+    credential: credential,
+  );
 
   /// Attaches the brigade credential (A_02). Only a brigadist has one.
   LocalProfile withCredential(BrigadeCredential credential) {

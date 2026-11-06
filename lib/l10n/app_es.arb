@@ -32,11 +32,9 @@
   "@errorSessionExpired": {
     "description": "Shown when the API answers 401."
   },
-
   "actionContinue": "Continuar",
   "actionBack": "Volver",
   "actionCancel": "Cancelar",
-
   "registrationTitle": "Crea tu cuenta",
   "@registrationTitle": {
     "description": "Title of A_01, registration and role selection."
@@ -55,7 +53,6 @@
   "roleBrigadistBenefitBlockchain": "Verificar entregas en Blockchain",
   "roleBrigadistApproval": "Requiere aprobación del Centro de Mando",
   "registrationLocalNote": "Tus datos se guardan en tu dispositivo",
-
   "validationNameRequired": "Ingresa tu nombre completo.",
   "validationNameTooShort": "El nombre es muy corto.",
   "validationNameTooLong": "El nombre es muy largo.",
@@ -64,7 +61,6 @@
   "validationOrganizationRequired": "Ingresa tu organismo.",
   "validationBrigadeCodeRequired": "Ingresa el código de tu brigada.",
   "validationBrigadeCodeInvalid": "Usa letras, números y guiones, por ejemplo BRG-ALFA-07.",
-
   "credentialTitle": "Credencial de brigadista",
   "@credentialTitle": {
     "description": "Title of A_02, brigade credential."
@@ -83,26 +79,20 @@
   "actionSendForApproval": "Enviar para aprobación",
   "actionBackChangeRole": "Volver y cambiar de rol",
   "idCardCameraError": "No pudimos abrir la cámara. Puedes enviar la credencial sin el carnet.",
-
   "navSos": "SOS",
   "navMyReports": "Mis reportes",
   "navSettings": "Ajustes",
   "navMissions": "Misiones",
   "navDelivery": "Entrega",
-
   "sosTitle": "Solicitar Auxilio Urgente",
   "sosSubtitle": "Un toque. No necesitas señal.",
-
   "reportsTitle": "Mis reportes",
   "reportsEmpty": "Aún no enviaste reportes. Usa el botón SOS cuando necesites ayuda.",
-
   "missionsAssigned": "Misiones asignadas",
   "missionsPendingTitle": "Tu cuenta está pendiente de aprobación",
   "missionsPendingDetail": "Cuando tu organización cree tu cuenta institucional, inicia sesión para recibir las misiones que te asigne el Centro de Mando.",
-
   "deliveryTitle": "Verificar entrega",
   "deliveryEmpty": "No tienes una entrega en curso. Inicia la navegación de una misión para verificar su entrega.",
-
   "settingsTitle": "Red y almacenamiento",
   "@settingsTitle": {
     "description": "Title of A_06 and A_09."
@@ -110,5 +100,27 @@
   "actionChangeRole": "Cambiar de rol",
   "changeRoleConfirmTitle": "¿Cambiar de rol?",
   "changeRoleConfirmBody": "Se borrará tu perfil de este dispositivo y volverás a la pantalla de registro.",
-  "actionConfirmChangeRole": "Cambiar de rol"
+  "actionConfirmChangeRole": "Cambiar de rol",
+  "registrationHaveAccount": "¿Ya tienes cuenta institucional? Inicia sesión",
+  "signInTitle": "Iniciar sesión",
+  "@signInTitle": {
+    "description": "Title of A_10, sign-in of brigadists."
+  },
+  "signInSubtitle": "App de campo para brigadas. Usa la cuenta que te asignó tu organización.",
+  "emailLabel": "Correo institucional",
+  "passwordLabel": "Contraseña",
+  "actionShowPassword": "Mostrar contraseña",
+  "actionHidePassword": "Ocultar contraseña",
+  "actionSignIn": "Ingresar",
+  "signInOfflineNote": "Funciona sin señal después del primer inicio de sesión",
+  "signInNotFieldBrigade": "Esta cuenta no es de una brigada de campo. Ingresa al Centro de Mando desde la web.",
+  "signInNoConnection": "Necesitas señal para el primer inicio de sesión. Después, la app funciona sin conexión.",
+  "validationEmailRequired": "Ingresa tu correo institucional.",
+  "validationEmailInvalid": "Ingresa un correo válido, por ejemplo m.quispe@coerlima.gob.pe.",
+  "validationPasswordRequired": "Ingresa tu contraseña.",
+  "actionGoToSignIn": "Iniciar sesión",
+  "actionSignOut": "Cerrar sesión",
+  "signOutConfirmTitle": "¿Cerrar sesión?",
+  "signOutConfirmBody": "Dejarás de recibir misiones en este dispositivo hasta que vuelvas a iniciar sesión.",
+  "missionsEmpty": "No tienes misiones asignadas. Cuando el Centro de Mando despache tu brigada, aparecerán aquí."
 }
