@@ -25,6 +25,9 @@ import '../../identityaccess/interfaces/pages/sign_in/sign_in_cubit.dart';
 import '../../identityaccess/interfaces/pages/sign_in/sign_in_screen.dart';
 import '../../identityaccess/interfaces/profile_cubit.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../networkstorage/application/offline_maps_service.dart';
+import '../../networkstorage/application/storage_stats.dart';
+import '../../networkstorage/interfaces/pages/network_storage/network_storage_cubit.dart';
 import '../../networkstorage/interfaces/pages/network_storage/network_storage_screen.dart';
 import '../../resourcemanagement/application/mission_service.dart';
 import '../../resourcemanagement/infrastructure/device/navigation_launcher.dart';
@@ -40,8 +43,12 @@ import '../../traceability/interfaces/pages/delivery/delivery_screen.dart';
 import '../config/app_config.dart';
 import '../di/service_locator.dart';
 import '../location/location_service.dart';
+import '../maps/offline_first_tile_provider.dart';
+import '../maps/offline_tile_store.dart';
+import '../sync/outbox_repository.dart';
 import '../sync/sync_cubit.dart';
 import 'delivery_tab.dart';
+import 'map_regions.dart';
 
 /// Paths of the app. Each screen of the report gets its own constant.
 abstract final class AppRoutes {
@@ -192,7 +199,30 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
               ),
             ],
           ),
-          _branch(AppRoutes.citizenSettings, const NetworkStorageScreen()),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.citizenSettings,
+                builder: (context, state) {
+                  final myLocation = AppLocalizations.of(
+                    context,
+                  ).regionMyLocation;
+                  return BlocProvider(
+                    create: (_) => NetworkStorageCubit(
+                      getIt<OfflineMapsService>(),
+                      getIt<StorageStatsSource>(),
+                      dataChanges: getIt<OutboxRepository>().changes,
+                      loadRegions: () => offlineRegions(
+                        location: getIt<LocationService>(),
+                        myLocationName: myLocation,
+                      ),
+                    )..start(),
+                    child: const NetworkStorageScreen(),
+                  );
+                },
+              ),
+            ],
+          ),
         ],
       ),
       GoRoute(
@@ -257,6 +287,9 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
                       context.go(AppRoutes.deliveryFor(mission.id)),
                   onNavigate: getIt<NavigationLauncher>().navigateTo,
                   tileUrlTemplate: getIt<AppConfig>().mapTileUrlTemplate,
+                  tileProvider: getIt.isRegistered<OfflineTileStore>()
+                      ? OfflineFirstTileProvider(getIt<OfflineTileStore>())
+                      : null,
                 ),
               ),
             ],
@@ -285,7 +318,31 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
               ),
             ],
           ),
-          _branch(AppRoutes.brigadeSettings, const NetworkStorageScreen()),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.brigadeSettings,
+                builder: (context, state) {
+                  final myLocation = AppLocalizations.of(
+                    context,
+                  ).regionMyLocation;
+                  return BlocProvider(
+                    create: (_) => NetworkStorageCubit(
+                      getIt<OfflineMapsService>(),
+                      getIt<StorageStatsSource>(),
+                      dataChanges: getIt<OutboxRepository>().changes,
+                      loadRegions: () => offlineRegions(
+                        location: getIt<LocationService>(),
+                        myLocationName: myLocation,
+                        missions: getIt<MissionService>(),
+                      ),
+                    )..start(),
+                    child: const NetworkStorageScreen(),
+                  );
+                },
+              ),
+            ],
+          ),
         ],
       ),
     ],
@@ -310,10 +367,6 @@ Widget _signIn(
     child: SignInScreen(onBack: onBack),
   );
 }
-
-StatefulShellBranch _branch(String path, Widget screen) => StatefulShellBranch(
-  routes: [GoRoute(path: path, builder: (context, state) => screen)],
-);
 
 /// Lets go_router re-run its redirect when the profile changes.
 class _CubitListenable extends ChangeNotifier {

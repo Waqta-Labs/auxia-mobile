@@ -520,5 +520,86 @@
   },
   "actionNextMission": "Siguiente misión",
   "actionRefreshStatus": "Actualizar estado",
-  "actionScanAgain": "Escanear de nuevo"
+  "actionScanAgain": "Escanear de nuevo",
+  "mapsCitizenTitle": "Mapas offline por región",
+  "mapsBrigadeTitle": "Mapas de tu zona asignada",
+  "mapsDownloaded": "Mapas descargados",
+  "mapsUsage": "{used} de {total}",
+  "@mapsUsage": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "regionMyLocation": "Mi ubicación",
+  "regionAssigned": "{name} · Asignada",
+  "@regionAssigned": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "regionAvailable": "{size} · Disponible offline",
+  "@regionAvailable": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "regionDownloading": "{size} · Descargando {percent}%",
+  "@regionDownloading": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "regionPaused": "{size} · En pausa {percent}%",
+  "@regionPaused": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "regionNotDownloaded": "≈{size} · No descargado",
+  "@regionNotDownloaded": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "actionDelete": "Borrar",
+  "actionPause": "Pausar",
+  "actionDownload": "Descargar",
+  "actionResume": "Reanudar",
+  "mapsNoSpace": "No hay espacio para este mapa. Borra otra región para continuar.",
+  "mapsDownloadFailed": "No pudimos descargar el mapa. Revisa tu conexión e inténtalo de nuevo.",
+  "mapsNoRegions": "Activa el GPS para descargar el mapa de tu ubicación.",
+  "localDatabase": "Base de datos local · SQLite",
+  "statLocalReports": "Reportes locales",
+  "statPendingSync": "Pendientes de sync",
+  "statDbSize": "Tamaño de BD",
+  "statIntegrity": "Integridad",
+  "integrityOk": "Cifrada · OK",
+  "integrityFailed": "Revisar",
+  "statLocalMissions": "Misiones locales",
+  "statEvidenceToUpload": "Evidencias por subir",
+  "statBlockchainQueue": "Tx Blockchain en cola",
+  "languageTitle": "Idioma",
+  "languageSpanish": "Español",
+  "languageEnglish": "English"
 }
