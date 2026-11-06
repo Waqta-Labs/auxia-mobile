@@ -1,5 +1,10 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../../emergencymanagement/application/citizen_report_sync.dart';
 import '../../emergencymanagement/application/quick_evidence.dart';
@@ -18,6 +23,9 @@ import '../../identityaccess/infrastructure/device/id_card_camera.dart';
 import '../../identityaccess/infrastructure/persistence/secure_profile_repository.dart';
 import '../../identityaccess/infrastructure/persistence/secure_session_repository.dart';
 import '../../identityaccess/interfaces/profile_cubit.dart';
+import '../../networkstorage/application/offline_maps_service.dart';
+import '../../networkstorage/application/storage_stats.dart';
+import '../../networkstorage/infrastructure/sqlite_storage_stats.dart';
 import '../../resourcemanagement/application/mission_service.dart';
 import '../../resourcemanagement/domain/repositories/mission_ports.dart';
 import '../../resourcemanagement/infrastructure/api/http_mission_gateway.dart';
@@ -34,7 +42,9 @@ import '../config/app_config.dart';
 import '../connectivity/connectivity_monitor.dart';
 import '../database/app_database.dart';
 import '../localization/locale_cubit.dart';
+import '../localization/locale_store.dart';
 import '../location/location_service.dart';
+import '../maps/offline_tile_store.dart';
 import '../network/api_client.dart';
 import '../sync/outbox_repository.dart';
 import '../sync/sync_cubit.dart';
@@ -48,10 +58,18 @@ Future<void> configureDependencies({AppConfig? config}) async {
   final appConfig = config ?? AppConfig.fromEnvironment();
   const storage = FlutterSecureStorage();
   final database = await AppDatabase.openEncrypted(storage: storage);
+  final localeStore = LocaleStore(database.db);
+  final savedLocale = await localeStore.load();
+  final documents = await getApplicationDocumentsDirectory();
 
   getIt
     ..registerSingleton<AppConfig>(appConfig)
-    ..registerSingleton<LocaleCubit>(LocaleCubit())
+    ..registerSingleton<LocaleCubit>(
+      LocaleCubit(
+        savedLocale ?? LocaleCubit.defaultLocale,
+        (locale) => unawaited(localeStore.save(locale)),
+      ),
+    )
     ..registerSingleton<FlutterSecureStorage>(storage)
     // Offline-first: encrypted database, outbox and synchronization.
     ..registerSingleton<AppDatabase>(database)
@@ -121,5 +139,22 @@ Future<void> configureDependencies({AppConfig? config}) async {
       () => DeliveryService(getIt(), getIt(), getIt()),
     )
     ..registerLazySingleton<DeliveryEvidence>(DeviceDeliveryEvidence.new)
-    ..registerLazySingleton<ExplorerLauncher>(ExplorerLauncher.new);
+    ..registerLazySingleton<ExplorerLauncher>(ExplorerLauncher.new)
+    // Red y almacenamiento
+    ..registerLazySingleton<StorageStatsSource>(
+      () => SqliteStorageStats(database),
+    );
+  final tiles = appConfig.mapTileUrlTemplate;
+  if (tiles != null) {
+    getIt
+      ..registerSingleton<OfflineTileStore>(
+        OfflineTileStore(
+          directory: Directory(p.join(documents.path, 'tiles')),
+          urlTemplate: tiles,
+        ),
+      )
+      ..registerLazySingleton<OfflineMapsService>(
+        () => OfflineMapsService(getIt()),
+      );
+  }
 }
