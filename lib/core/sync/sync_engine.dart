@@ -209,8 +209,10 @@ class SyncEngine implements SyncController {
   Future<_Outcome> _send(OutboxItem item) async {
     final handler = _handlers[item.type];
     if (handler == null) {
-      await _outbox.markRejected(item.id, 'No handler for ${item.type}');
-      return _Outcome.rejected;
+      // No channel can send this kind of write yet (for example, a backend
+      // endpoint that is still missing). It stays on the device.
+      await _retryLater(item, 'No channel for ${item.type} yet');
+      return _Outcome.retry;
     }
 
     await _outbox.markSending(item.id);

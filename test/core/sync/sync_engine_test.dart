@@ -144,13 +144,15 @@ void main() {
     expect(sync.state.lastSyncAt, isNull);
   });
 
-  test('a write without handler is rejected', () async {
+  test('a write without a channel yet stays on the device', () async {
     final sync = engine(_ScriptedHandler([]));
     await outbox.enqueue(type: 'unknown', payload: const {}, id: 'x');
 
     await sync.syncNow();
 
-    expect((await outbox.find('x'))!.status, OutboxStatus.rejected);
+    final item = (await outbox.find('x'))!;
+    expect(item.status, OutboxStatus.pending);
+    expect(item.attempts, 1);
   });
 
   test('forcing a retry sends writes that were waiting', () async {
