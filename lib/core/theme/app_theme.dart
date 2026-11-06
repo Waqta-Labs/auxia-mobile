@@ -159,6 +159,38 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
       ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: AppColors.surfaceDeep,
+        indicatorColor: AppColors.lime,
+        surfaceTintColor: Colors.transparent,
+        height: 80,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            size: 24,
+            color: states.contains(WidgetState.selected)
+                ? AppColors.onAccent
+                : AppColors.textSecondary,
+          ),
+        ),
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => textTheme.labelMedium?.copyWith(
+            color: states.contains(WidgetState.selected)
+                ? AppColors.lime
+                : AppColors.textSecondary,
+          ),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppColors.surface,
+        titleTextStyle: textTheme.titleLarge,
+        contentTextStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColors.textSecondary,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+        ),
+      ),
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: AppColors.surface,
         showDragHandle: true,
@@ -171,10 +203,39 @@ abstract final class AppTheme {
     );
   }
 
-  static OutlineInputBorder _inputBorder(Color color, {double width = 1}) {
-    return OutlineInputBorder(
+  static InputBorder _inputBorder(Color color, {double width = 1}) {
+    return _FilledRoundedBorder(
       borderRadius: BorderRadius.circular(AppRadius.lg),
       borderSide: BorderSide(color: color, width: width),
     );
   }
+}
+
+/// Rounded border that keeps the label inside the field, as in the mockups
+/// (A_01, A_02, A_10), instead of cutting the outline like Material does.
+class _FilledRoundedBorder extends OutlineInputBorder {
+  const _FilledRoundedBorder({super.borderRadius, super.borderSide});
+
+  @override
+  bool get isOutline => false;
+
+  @override
+  _FilledRoundedBorder copyWith({
+    BorderSide? borderSide,
+    BorderRadius? borderRadius,
+    double? gapPadding,
+  }) => _FilledRoundedBorder(
+    borderSide: borderSide ?? this.borderSide,
+    borderRadius: borderRadius ?? this.borderRadius,
+  );
+
+  @override
+  void paint(
+    Canvas canvas,
+    Rect rect, {
+    double? gapStart,
+    double gapExtent = 0.0,
+    double gapPercentage = 0.0,
+    TextDirection? textDirection,
+  }) => super.paint(canvas, rect, textDirection: textDirection);
 }
