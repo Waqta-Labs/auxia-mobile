@@ -75,6 +75,16 @@ class AppDatabase {
       )
       ''',
     ],
+    // Version 4: deliveries registered from the device (A_08).
+    [
+      '''
+      CREATE TABLE delivery_records (
+        id TEXT PRIMARY KEY,
+        json TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      )
+      ''',
+    ],
   ];
 
   static int get version => migrations.length;

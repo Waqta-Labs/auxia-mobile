@@ -21,6 +21,9 @@ import 'package:auxia_mobile/l10n/generated/app_localizations.dart';
 import 'package:auxia_mobile/resourcemanagement/domain/model/mission.dart';
 import 'package:auxia_mobile/resourcemanagement/domain/repositories/mission_ports.dart';
 import 'package:auxia_mobile/shared/domain/geo_point.dart';
+import 'package:auxia_mobile/traceability/application/delivery_evidence.dart';
+import 'package:auxia_mobile/traceability/domain/model/delivery.dart';
+import 'package:auxia_mobile/traceability/domain/repositories/delivery_ports.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -335,3 +338,67 @@ class FakeMissionGateway implements MissionGateway {
   Future<Either<Failure, Mission?>> missionFor(BrigadeSummary brigade) async =>
       failure != null ? Left(failure!) : Right(mission);
 }
+
+/// Delivery evidence kept in memory.
+class FakeDeliveryEvidence implements DeliveryEvidence {
+  String? photo = '/deliveries/reception.jpg';
+  final List<Uint8List> signatures = [];
+
+  @override
+  Future<String?> takePhoto() async => photo;
+
+  @override
+  Future<String> saveSignature(Uint8List png) async {
+    signatures.add(png);
+    return '/deliveries/signature.png';
+  }
+}
+
+/// Delivery gateway with scripted answers.
+class FakeDeliveryGateway implements DeliveryGateway {
+  Either<Failure, DeliveryIntegrity> registerResult = const Right(
+    DeliveryIntegrity(
+      anchorStatus: AnchorStatus.pending,
+      recordHash:
+          'ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56c91e',
+    ),
+  );
+  Either<Failure, DeliveryIntegrity> integrityResult = const Right(
+    DeliveryIntegrity(
+      anchorStatus: AnchorStatus.anchored,
+      recordHash:
+          'ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56c91e',
+      transactionHash:
+          '0x7f3a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6ec91e',
+    ),
+  );
+  int registrations = 0;
+
+  @override
+  Future<Either<Failure, DeliveryIntegrity>> register(
+    DeliveryRecord record,
+  ) async {
+    registrations++;
+    return registerResult;
+  }
+
+  @override
+  Future<Either<Failure, DeliveryIntegrity>> integrity(String id) async =>
+      integrityResult;
+}
+
+/// Order of the sample mission.
+const sampleOrder = DeliveryOrder(
+  deliveryId: '3f2a91c0-0000-4000-8000-000000002041',
+  zoneName: 'Sector Santa Rosa',
+  brigadeName: 'Brigada Alfa',
+  lines: [
+    DeliveryLine(
+      resourceId: 'r1',
+      name: 'Kit de víveres',
+      unit: 'KIT',
+      planned: 12,
+      delivered: 12,
+    ),
+  ],
+);

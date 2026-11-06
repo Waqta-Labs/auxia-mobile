@@ -23,6 +23,13 @@ import '../../resourcemanagement/domain/repositories/mission_ports.dart';
 import '../../resourcemanagement/infrastructure/api/http_mission_gateway.dart';
 import '../../resourcemanagement/infrastructure/device/navigation_launcher.dart';
 import '../../resourcemanagement/infrastructure/persistence/sqlite_mission_cache.dart';
+import '../../traceability/application/delivery_evidence.dart';
+import '../../traceability/application/delivery_service.dart';
+import '../../traceability/domain/repositories/delivery_ports.dart';
+import '../../traceability/infrastructure/api/http_delivery_gateway.dart';
+import '../../traceability/infrastructure/device/device_delivery_evidence.dart';
+import '../../traceability/infrastructure/device/explorer_launcher.dart';
+import '../../traceability/infrastructure/persistence/sqlite_delivery_record_repository.dart';
 import '../config/app_config.dart';
 import '../connectivity/connectivity_monitor.dart';
 import '../database/app_database.dart';
@@ -58,6 +65,7 @@ Future<void> configureDependencies({AppConfig? config}) async {
         handlers: <OutboxHandler>[
           CitizenReportHandler(getIt(), getIt()),
           CitizenReportDetailHandler(getIt(), getIt()),
+          DeliveryRegistrationHandler(getIt(), getIt()),
         ],
       ),
     )
@@ -103,5 +111,15 @@ Future<void> configureDependencies({AppConfig? config}) async {
     ..registerLazySingleton<MissionService>(
       () => MissionService(getIt(), getIt()),
     )
-    ..registerLazySingleton<NavigationLauncher>(NavigationLauncher.new);
+    ..registerLazySingleton<NavigationLauncher>(NavigationLauncher.new)
+    // Traceability
+    ..registerLazySingleton<DeliveryRecordRepository>(
+      () => SqliteDeliveryRecordRepository(database.db),
+    )
+    ..registerLazySingleton<DeliveryGateway>(() => HttpDeliveryGateway(getIt()))
+    ..registerLazySingleton<DeliveryService>(
+      () => DeliveryService(getIt(), getIt(), getIt()),
+    )
+    ..registerLazySingleton<DeliveryEvidence>(DeviceDeliveryEvidence.new)
+    ..registerLazySingleton<ExplorerLauncher>(ExplorerLauncher.new);
 }
