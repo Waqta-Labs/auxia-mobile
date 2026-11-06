@@ -37,6 +37,28 @@ class AppDatabase {
       ''',
       'CREATE INDEX outbox_due ON outbox (status, next_attempt_at)',
     ],
+    // Version 2: SOS reports of the citizen (A_03 to A_05).
+    [
+      '''
+      CREATE TABLE citizen_reports (
+        id TEXT PRIMARY KEY,
+        code TEXT NOT NULL,
+        category TEXT NOT NULL,
+        latitude REAL,
+        longitude REAL,
+        reported_at INTEGER NOT NULL,
+        children INTEGER NOT NULL DEFAULT 0,
+        elderly INTEGER NOT NULL DEFAULT 0,
+        injured INTEGER NOT NULL DEFAULT 0,
+        access_conditions TEXT NOT NULL DEFAULT '',
+        audio_path TEXT,
+        photo_path TEXT,
+        status TEXT NOT NULL,
+        score REAL,
+        eta_minutes INTEGER
+      )
+      ''',
+    ],
   ];
 
   static int get version => migrations.length;
