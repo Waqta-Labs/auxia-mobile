@@ -26,6 +26,7 @@ class MissionsMap extends StatefulWidget {
     required this.myLocation,
     required this.tileUrlTemplate,
     required this.overlayLabel,
+    this.tileProvider,
   });
 
   final List<Mission> missions;
@@ -35,6 +36,9 @@ class MissionsMap extends StatefulWidget {
   /// Raster tiles; null hides them (tests).
   final String? tileUrlTemplate;
   final String overlayLabel;
+
+  /// Offline-first provider; null uses the network provider.
+  final TileProvider? tileProvider;
 
   @override
   State<MissionsMap> createState() => _MissionsMapState();
@@ -112,6 +116,7 @@ class _MissionsMapState extends State<MissionsMap> {
                     subdomains: const ['a', 'b', 'c', 'd'],
                     userAgentPackageName: 'com.waqtalabs.auxia_mobile',
                     retinaMode: RetinaMode.isHighDensity(context),
+                    tileProvider: widget.tileProvider,
                   ),
                 if (active != null && me != null)
                   PolylineLayer(
