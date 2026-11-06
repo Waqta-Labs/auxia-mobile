@@ -1,0 +1,35 @@
+{
+  "@@locale": "es",
+  "appTitle": "AuxIA",
+  "@appTitle": {
+    "description": "Launcher and window title of the app."
+  },
+  "appTagline": "Auxilio y coordinación offline",
+  "@appTagline": {
+    "description": "ASO subtitle of the app (report 6.2.3)."
+  },
+  "connectionOfflineMode": "Modo Offline Activo",
+  "@connectionOfflineMode": {
+    "description": "Connectivity badge when the app keeps working and saves data locally (report 6.1.2 C)."
+  },
+  "connectionNoSignal": "Sin señal",
+  "@connectionNoSignal": {
+    "description": "Connectivity badge when no sync channel is available (report 6.1.2 C)."
+  },
+  "connectionOnline": "En línea",
+  "@connectionOnline": {
+    "description": "Connectivity badge when the device has network and can sync."
+  },
+  "errorUnexpected": "Ocurrió un problema. Inténtalo de nuevo.",
+  "@errorUnexpected": {
+    "description": "Generic error when the cause is unknown."
+  },
+  "errorNoConnection": "No hay conexión. Lo guardamos y lo enviaremos al recuperar la señal.",
+  "@errorNoConnection": {
+    "description": "Shown when a request fails because the device is offline."
+  },
+  "errorSessionExpired": "Tu sesión venció. Inicia sesión de nuevo para sincronizar.",
+  "@errorSessionExpired": {
+    "description": "Shown when the API answers 401."
+  }
+}

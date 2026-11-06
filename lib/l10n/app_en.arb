@@ -1,0 +1,11 @@
+{
+  "@@locale": "en",
+  "appTitle": "AuxIA",
+  "appTagline": "Offline aid and coordination",
+  "connectionOfflineMode": "Offline Mode Active",
+  "connectionNoSignal": "No signal",
+  "connectionOnline": "Online",
+  "errorUnexpected": "Something went wrong. Please try again.",
+  "errorNoConnection": "No connection. We saved it and will send it when the signal returns.",
+  "errorSessionExpired": "Your session expired. Sign in again to sync."
+}
