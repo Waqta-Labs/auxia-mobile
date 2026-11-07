@@ -75,6 +75,28 @@ class _MissionsMapState extends State<MissionsMap> {
     );
   }
 
+  /// What the camera frames: the missions and whether the position is
+  /// known. Moving with the GPS does not reframe the map.
+  static Object _framing(MissionsMap map) => (
+    [
+      for (final mission in map.missions)
+        if (mission.location != null) (mission.id, mission.location),
+    ].toString(),
+    map.myLocation != null,
+  );
+
+  @override
+  void didUpdateWidget(MissionsMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The map opens before the missions or the position arrive: frame them
+    // when they do.
+    if (_framing(oldWidget) != _framing(widget)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _recenter();
+      });
+    }
+  }
+
   void _recenter() {
     final points = _points;
     if (points.length >= 2) {
