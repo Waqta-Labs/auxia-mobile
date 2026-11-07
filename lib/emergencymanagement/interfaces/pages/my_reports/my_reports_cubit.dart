@@ -20,7 +20,8 @@ class MyReportsState extends Equatable {
 ///
 /// The status of the sent reports is asked to the backend when the screen
 /// starts, as soon as a report is received by the backend, and then every
-/// [pollEvery] while there are reports still waiting for a brigade.
+/// [pollEvery] while there are sent reports: a brigade on the way can still
+/// deliver and put the report back to prioritized.
 class MyReportsCubit extends Cubit<MyReportsState> {
   MyReportsCubit(this._service, {this.pollEvery = const Duration(minutes: 1)})
     : super(const MyReportsState());
@@ -89,10 +90,11 @@ class MyReportsCubit extends Cubit<MyReportsState> {
     if (newlyReceived && _started) unawaited(refreshStatuses());
   }
 
-  /// Sent reports whose status can still move forward on the backend.
+  /// Sent reports whose status can still change on the backend.
   static bool _waitingForBackend(CitizenReportStatus status) =>
       status == CitizenReportStatus.received ||
-      status == CitizenReportStatus.prioritized;
+      status == CitizenReportStatus.prioritized ||
+      status == CitizenReportStatus.brigadeOnTheWay;
 
   @override
   Future<void> close() async {

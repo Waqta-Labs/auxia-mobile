@@ -252,21 +252,21 @@ void main() {
       );
     });
 
-    test('never moves a report backwards', () async {
+    test('goes back to prioritized once the brigade delivered', () async {
       final report = await newSos();
       await reports.save(
         report.withStatus(CitizenReportStatus.brigadeOnTheWay, etaMinutes: 5),
       );
       gateway.statuses[report.id] = const Right(
-        RemoteReportStatus(status: CitizenReportStatus.received),
+        RemoteReportStatus(status: CitizenReportStatus.prioritized, score: 48),
       );
 
       await MyReportsService(reports, gateway).refreshStatuses();
 
-      expect(
-        (await reports.find(report.id))!.status,
-        CitizenReportStatus.brigadeOnTheWay,
-      );
+      final updated = (await reports.find(report.id))!;
+      expect(updated.status, CitizenReportStatus.prioritized);
+      expect(updated.score, 48);
+      expect(updated.etaMinutes, isNull);
     });
 
     test('does not ask about reports that are still on the device', () async {
