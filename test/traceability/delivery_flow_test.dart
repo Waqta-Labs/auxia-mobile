@@ -193,6 +193,33 @@ void main() {
     });
   });
 
+  testWidgets('A_08 accepts the code typed by hand', (tester) async {
+    tester.view.physicalSize = const Size(1170, 5000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      localizedApp(
+        DeliveryScreen(
+          order: sampleOrder,
+          createCubit: (_) => cubit(),
+          onNextMission: () {},
+          onOpenTransaction: (_) {},
+          scannerBuilder: (_) => const SizedBox(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Ingresar el código a mano'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), sampleOrder.deliveryId);
+    await tester.tap(find.text('Confirmar'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('1 · Escaneo ✓'), findsOneWidget);
+  });
+
   testWidgets('A_08 goes from scan to the Blockchain seal', (tester) async {
     tester.view.physicalSize = const Size(1170, 5000);
     tester.view.devicePixelRatio = 3;
