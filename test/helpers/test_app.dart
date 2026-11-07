@@ -250,6 +250,10 @@ class FakeCitizenReportGateway implements CitizenReportGateway {
   final Map<String, Either<Failure, RemoteReportStatus>> statuses = {};
   final List<(String, String)> submitted = [];
 
+  /// (clientReportId, attachmentId, path) of each uploaded evidence.
+  final List<(String, String, String)> uploaded = [];
+  Either<Failure, Unit> uploadResult = const Right(unit);
+
   @override
   Future<Either<Failure, Unit>> submit(
     CitizenReport report, {
@@ -264,6 +268,16 @@ class FakeCitizenReportGateway implements CitizenReportGateway {
   @override
   Future<Either<Failure, RemoteReportStatus>> status(String id) async =>
       statuses[id] ?? const Left(NetworkFailure());
+
+  @override
+  Future<Either<Failure, Unit>> uploadEvidence(
+    String clientReportId, {
+    required String attachmentId,
+    required String path,
+  }) async {
+    uploaded.add((clientReportId, attachmentId, path));
+    return uploadResult;
+  }
 }
 
 /// Mission of the examples: Sector Santa Rosa, score 94.

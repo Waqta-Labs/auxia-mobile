@@ -28,6 +28,7 @@ void main() {
     String code,
     HelpCategory category,
     CitizenReportStatus status, {
+    double? score,
     int? eta,
   }) => CitizenReport(
     id: code,
@@ -35,6 +36,7 @@ void main() {
     category: category,
     reportedAt: DateTime.now().subtract(const Duration(minutes: 18)),
     status: status,
+    score: score,
     etaMinutes: eta,
   );
 
@@ -63,7 +65,12 @@ void main() {
       report('SR-0411', HelpCategory.rescue, CitizenReportStatus.transmitting),
     );
     await reports.save(
-      report('SR-0398', HelpCategory.medical, CitizenReportStatus.prioritized),
+      report(
+        'SR-0398',
+        HelpCategory.medical,
+        CitizenReportStatus.prioritized,
+        score: 93.6,
+      ),
     );
     await reports.save(
       report(
@@ -80,9 +87,20 @@ void main() {
     expect(find.text('SR-0412 · Médico'), findsOneWidget);
     expect(find.text('Guardado en dispositivo'), findsOneWidget);
     expect(find.text('Transmitiendo…'), findsOneWidget);
-    expect(find.text('Priorizado por IA'), findsOneWidget);
+    expect(find.text('Priorizado por IA · 94'), findsOneWidget);
     expect(find.text('Brigada en camino · ETA 12 min'), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp('Paso 4 de 4')), findsOneWidget);
+  });
+
+  testWidgets('a received report keeps showing transmitting', (tester) async {
+    await reports.save(
+      report('SR-0420', HelpCategory.rescue, CitizenReportStatus.received),
+    );
+
+    await pump(tester);
+
+    expect(find.text('Transmitiendo…'), findsOneWidget);
+    expect(find.textContaining('Recibido'), findsNothing);
   });
 
   testWidgets('without eta the brigade label leaves no gap', (tester) async {
