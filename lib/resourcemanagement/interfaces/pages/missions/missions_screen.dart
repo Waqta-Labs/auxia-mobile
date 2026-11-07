@@ -34,8 +34,8 @@ class MissionsScreen extends StatelessWidget {
   /// Opens A_10.
   final VoidCallback onSignIn;
 
-  /// Builds the cubit for the name of the signed-in brigadist.
-  final MissionsCubit Function(String fullName) createCubit;
+  /// Builds the cubit of the signed-in brigadist.
+  final MissionsCubit Function() createCubit;
 
   /// "Verificar entrega": opens A_08 for the mission.
   final void Function(Mission mission) onVerifyDelivery;
@@ -77,7 +77,7 @@ class MissionsScreen extends StatelessWidget {
 
     return BlocProvider(
       key: ValueKey(session.userId),
-      create: (_) => createCubit(session.fullName)..start(),
+      create: (_) => createCubit()..start(),
       child: _MissionsView(
         onVerifyDelivery: onVerifyDelivery,
         onNavigate: onNavigate,
@@ -163,10 +163,11 @@ class _MissionsView extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.sm),
             ],
-            if (state.brigadeChoice != null)
-              _BrigadeChoice(
-                brigades: state.brigadeChoice!,
-                onChoose: cubit.chooseBrigade,
+            if (state.noBrigade)
+              EmptyState(
+                icon: Icons.group_add_outlined,
+                title: l10n.missionsNoBrigadeTitle,
+                message: l10n.missionsNoBrigadeDetail,
               )
             else if (state.missions.isEmpty)
               state.loading || state.refreshing
@@ -206,47 +207,6 @@ class _MissionsView extends StatelessWidget {
           ],
         );
       },
-    );
-  }
-}
-
-class _BrigadeChoice extends StatelessWidget {
-  const _BrigadeChoice({required this.brigades, required this.onChoose});
-
-  final List<BrigadeSummary> brigades;
-  final ValueChanged<BrigadeSummary> onChoose;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final textTheme = Theme.of(context).textTheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(l10n.chooseBrigadeTitle, style: textTheme.titleLarge),
-        const SizedBox(height: AppSpacing.xxs),
-        Text(
-          l10n.chooseBrigadeBody,
-          style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        for (final brigade in brigades) ...[
-          AppCard(
-            onTap: () => onChoose(brigade),
-            child: Row(
-              children: [
-                const Icon(Icons.groups_outlined, color: AppColors.skyBlue),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(brigade.name, style: textTheme.titleMedium),
-                ),
-                const Icon(Icons.chevron_right),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-        ],
-      ],
     );
   }
 }

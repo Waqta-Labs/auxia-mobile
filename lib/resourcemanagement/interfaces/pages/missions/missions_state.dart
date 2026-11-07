@@ -6,7 +6,7 @@ class MissionsState extends Equatable {
     this.loading = true,
     this.refreshing = false,
     this.failure,
-    this.brigadeChoice,
+    this.noBrigade = false,
     this.myLocation,
   });
 
@@ -17,8 +17,8 @@ class MissionsState extends Equatable {
   /// Why the last refresh failed; the cached missions are still shown.
   final Failure? failure;
 
-  /// Brigades to choose from when the name matched none or several.
-  final List<BrigadeSummary>? brigadeChoice;
+  /// The account is not a member of any brigade yet.
+  final bool noBrigade;
   final GeoPoint? myLocation;
 
   List<Mission> get missions => snapshot.missions;
@@ -40,14 +40,14 @@ class MissionsState extends Equatable {
     bool? loading,
     bool? refreshing,
     Failure? Function()? failure,
-    List<BrigadeSummary>? Function()? brigadeChoice,
+    bool? noBrigade,
     GeoPoint? myLocation,
   }) => MissionsState(
     snapshot: snapshot ?? this.snapshot,
     loading: loading ?? this.loading,
     refreshing: refreshing ?? this.refreshing,
     failure: failure != null ? failure() : this.failure,
-    brigadeChoice: brigadeChoice != null ? brigadeChoice() : this.brigadeChoice,
+    noBrigade: noBrigade ?? this.noBrigade,
     myLocation: myLocation ?? this.myLocation,
   );
 
@@ -57,7 +57,7 @@ class MissionsState extends Equatable {
     loading,
     refreshing,
     failure,
-    brigadeChoice,
+    noBrigade,
     myLocation,
   ];
 }

@@ -11,19 +11,12 @@ part 'missions_state.dart';
 
 /// Misiones y mapa (A_07): cached missions first, then the backend.
 class MissionsCubit extends Cubit<MissionsState> {
-  MissionsCubit(
-    this._service,
-    this._location, {
-    required this.fullName,
-    DateTime Function()? clock,
-  }) : _clock = clock ?? DateTime.now,
-       super(const MissionsState());
+  MissionsCubit(this._service, this._location, {DateTime Function()? clock})
+    : _clock = clock ?? DateTime.now,
+      super(const MissionsState());
 
   final MissionService _service;
   final LocationService _location;
-
-  /// Name of the institutional account, to find the brigade.
-  final String fullName;
   final DateTime Function() _clock;
 
   Future<void> start() async {
@@ -35,7 +28,7 @@ class MissionsCubit extends Cubit<MissionsState> {
 
   Future<void> refresh() async {
     emit(state.copyWith(refreshing: true, failure: () => null));
-    final result = await _service.refresh(fullName);
+    final result = await _service.refresh();
     if (isClosed) return;
     result.fold(
       (failure) =>
@@ -45,20 +38,18 @@ class MissionsCubit extends Cubit<MissionsState> {
           state.copyWith(
             refreshing: false,
             snapshot: snapshot,
-            brigadeChoice: () => null,
+            noBrigade: false,
           ),
         ),
-        BrigadeChoiceNeeded(:final brigades) => emit(
-          state.copyWith(refreshing: false, brigadeChoice: () => brigades),
+        NoBrigadeLinked() => emit(
+          state.copyWith(
+            refreshing: false,
+            snapshot: const MissionsSnapshot(missions: []),
+            noBrigade: true,
+          ),
         ),
       },
     );
-  }
-
-  Future<void> chooseBrigade(BrigadeSummary brigade) async {
-    await _service.chooseBrigade(brigade.id);
-    emit(state.copyWith(brigadeChoice: () => null));
-    await refresh();
   }
 
   Future<void> startNavigation(Mission mission) async {

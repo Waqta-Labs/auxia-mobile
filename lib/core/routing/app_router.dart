@@ -278,10 +278,9 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
                 path: AppRoutes.brigadeMissions,
                 builder: (context, state) => MissionsScreen(
                   onSignIn: () => context.push(AppRoutes.brigadeSignIn),
-                  createCubit: (fullName) => MissionsCubit(
+                  createCubit: () => MissionsCubit(
                     getIt<MissionService>(),
                     getIt<LocationService>(),
-                    fullName: fullName,
                   ),
                   onVerifyDelivery: (mission) =>
                       context.go(AppRoutes.deliveryFor(mission.id)),

@@ -2,45 +2,18 @@ import 'package:equatable/equatable.dart';
 
 import '../../../shared/domain/geo_point.dart';
 
-/// Brigade of the organization, as the brigadist sees it.
-final class BrigadeSummary extends Equatable {
-  const BrigadeSummary({
-    required this.id,
-    required this.name,
-    required this.memberNames,
-    this.distributionPlanId,
-  });
+/// Kind of help of a mission (A_07 label), from the resources of its plan:
+/// a plan with medicines is "Médico", any other is "Víveres" (plan D4).
+enum MissionCategory {
+  medical('MEDICAL'),
+  supplies('SUPPLIES');
 
-  final String id;
-  final String name;
-  final List<String> memberNames;
+  const MissionCategory(this.code);
 
-  /// Plan of the mission in progress, if the Command Center dispatched it.
-  final String? distributionPlanId;
+  final String code;
 
-  /// Whether a person with this name belongs to the brigade. Accents, case
-  /// and extra spaces are ignored.
-  bool hasMember(String fullName) {
-    final wanted = normalizeName(fullName);
-    return memberNames.any((name) => normalizeName(name) == wanted);
-  }
-
-  static String normalizeName(String name) {
-    const accents = {
-      'á': 'a',
-      'é': 'e',
-      'í': 'i',
-      'ó': 'o',
-      'ú': 'u',
-      'ü': 'u',
-      'ñ': 'n',
-    };
-    final lower = name.toLowerCase().trim().replaceAll(RegExp(r'\s+'), ' ');
-    return lower.split('').map((c) => accents[c] ?? c).join();
-  }
-
-  @override
-  List<Object?> get props => [id, name, memberNames, distributionPlanId];
+  static MissionCategory fromCode(String? code) =>
+      code == 'MEDICAL' ? medical : supplies;
 }
 
 /// Priority computed by the AI for a zone.
@@ -150,11 +123,14 @@ enum MissionStatus {
   completed,
 }
 
-/// A delivery the Command Center assigned to the brigade (A_07). Its id is
-/// the id of the delivery in the backend, which A_08 registers.
+/// An assignment of the brigade (A_07, plan D4): the one in progress first,
+/// then the completed ones. Its id is the plan, stable while the delivery
+/// that A_08 registers is opened.
 final class Mission extends Equatable {
   const Mission({
     required this.id,
+    this.deliveryId,
+    this.category = MissionCategory.supplies,
     required this.brigadeId,
     required this.brigadeName,
     required this.planId,
@@ -169,9 +145,16 @@ final class Mission extends Equatable {
     this.reasons = const [],
     this.items = const [],
     this.assignedAt,
+    this.completedAt,
+    this.baseDistanceKm,
+    this.baseEtaMinutes,
   });
 
   final String id;
+
+  /// Delivery to register in A_08; null until the backend opens it.
+  final String? deliveryId;
+  final MissionCategory category;
   final String brigadeId;
   final String brigadeName;
   final String planId;
@@ -192,11 +175,22 @@ final class Mission extends Equatable {
 
   /// When the plan was approved.
   final DateTime? assignedAt;
+  final DateTime? completedAt;
+
+  /// Distance and travel time from the base of the brigade, computed by the
+  /// backend (plan D1). The card prefers the live GPS when there is one.
+  final double? baseDistanceKm;
+  final int? baseEtaMinutes;
 
   bool get isOpen => status != MissionStatus.completed;
 
+  /// Whether A_08 can register its delivery.
+  bool get canRegisterDelivery => isOpen && deliveryId != null;
+
   Mission withStatus(MissionStatus status) => Mission(
     id: id,
+    deliveryId: deliveryId,
+    category: category,
     brigadeId: brigadeId,
     brigadeName: brigadeName,
     planId: planId,
@@ -211,11 +205,16 @@ final class Mission extends Equatable {
     reasons: reasons,
     items: items,
     assignedAt: assignedAt,
+    completedAt: completedAt,
+    baseDistanceKm: baseDistanceKm,
+    baseEtaMinutes: baseEtaMinutes,
   );
 
   @override
   List<Object?> get props => [
     id,
+    deliveryId,
+    category,
     brigadeId,
     brigadeName,
     planId,
@@ -230,13 +229,16 @@ final class Mission extends Equatable {
     reasons,
     items,
     assignedAt,
+    completedAt,
+    baseDistanceKm,
+    baseEtaMinutes,
   ];
 }
 
-/// Road distance is unknown offline; the app estimates the travel time with
-/// the average speed of the mockup example (3.2 km in 12 min).
-const double fieldSpeedKmPerHour = 16;
+/// Average field speed of plan D1, the same the backend uses.
+const double fieldSpeedKmPerHour = 30;
 
-/// Minutes to travel [distanceKm] at [fieldSpeedKmPerHour].
+/// Minutes to travel [distanceKm] in a straight line at
+/// [fieldSpeedKmPerHour], rounded up to the minute (plan D1).
 int estimatedMinutes(double distanceKm) =>
-    (distanceKm / fieldSpeedKmPerHour * 60).round().clamp(1, 24 * 60);
+    (distanceKm / fieldSpeedKmPerHour * 60).ceil().clamp(1, 24 * 60);
