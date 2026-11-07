@@ -5,11 +5,12 @@ import '../../../core/network/api_client.dart';
 import '../../domain/model/citizen_report.dart';
 import '../../domain/repositories/citizen_report_gateway.dart';
 
-/// [CitizenReportGateway] over the proposed public endpoints.
+/// [CitizenReportGateway] over the public field report endpoints.
 ///
-/// A 404 means the backend has not published the endpoint yet. It is turned
-/// into a retryable failure so the report stays queued on the device until
-/// the channel exists, instead of being discarded.
+/// A 404 on the POST means the backend in use does not publish the endpoint.
+/// It is turned into a retryable failure so the report stays queued on the
+/// device instead of being discarded. A 404 on the status means the backend
+/// does not know that report and is returned as is.
 class HttpCitizenReportGateway implements CitizenReportGateway {
   HttpCitizenReportGateway(this._client);
 
@@ -45,7 +46,7 @@ class HttpCitizenReportGateway implements CitizenReportGateway {
       '$path/$clientReportId',
       parse: (data) => remoteStatusFromJson(data! as Map<String, Object?>),
     );
-    return result.mapLeft(_channelNotReady);
+    return result;
   }
 
   static Failure _channelNotReady(Failure failure) => failure is NotFoundFailure
@@ -53,7 +54,7 @@ class HttpCitizenReportGateway implements CitizenReportGateway {
       : failure;
 }
 
-/// Request body of the proposed `POST /public/field-reports`.
+/// Request body of `POST /public/field-reports`.
 Map<String, Object?> citizenReportBody(
   CitizenReport report, {
   String? clientReportId,
@@ -78,7 +79,7 @@ Map<String, Object?> citizenReportBody(
   'relatedReportId': ?relatedReport?.id,
 };
 
-/// Maps the proposed status resource.
+/// Maps the status resource. A `score` in the body is ignored on purpose.
 RemoteReportStatus remoteStatusFromJson(Map<String, Object?> json) =>
     RemoteReportStatus(
       status: switch (json['status']) {
@@ -86,7 +87,6 @@ RemoteReportStatus remoteStatusFromJson(Map<String, Object?> json) =>
         'BRIGADE_ON_THE_WAY' => CitizenReportStatus.brigadeOnTheWay,
         _ => CitizenReportStatus.received,
       },
-      score: (json['score'] as num?)?.toDouble(),
       etaMinutes: (json['etaMinutes'] as num?)?.toInt(),
     );
 

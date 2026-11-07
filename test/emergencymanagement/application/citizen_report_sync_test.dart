@@ -91,18 +91,43 @@ void main() {
   });
 
   group('MyReportsService', () {
-    test('updates sent reports with the AI score and the eta', () async {
+    test('updates sent reports with their stage and eta', () async {
       final report = await newSos();
       await reports.save(report.withStatus(CitizenReportStatus.received));
       gateway.statuses[report.id] = const Right(
-        RemoteReportStatus(status: CitizenReportStatus.prioritized, score: 94),
+        RemoteReportStatus(
+          status: CitizenReportStatus.brigadeOnTheWay,
+          etaMinutes: 12,
+        ),
       );
 
       await MyReportsService(reports, gateway).refreshStatuses();
 
       final updated = (await reports.find(report.id))!;
-      expect(updated.status, CitizenReportStatus.prioritized);
-      expect(updated.score, 94);
+      expect(updated.status, CitizenReportStatus.brigadeOnTheWay);
+      expect(updated.etaMinutes, 12);
+    });
+
+    test('skips a report the backend does not know', () async {
+      final unknown = await newSos();
+      final known = await newSos();
+      await reports.save(unknown.withStatus(CitizenReportStatus.received));
+      await reports.save(known.withStatus(CitizenReportStatus.received));
+      gateway.statuses[unknown.id] = const Left(NotFoundFailure());
+      gateway.statuses[known.id] = const Right(
+        RemoteReportStatus(status: CitizenReportStatus.prioritized),
+      );
+
+      await MyReportsService(reports, gateway).refreshStatuses();
+
+      expect(
+        (await reports.find(unknown.id))!.status,
+        CitizenReportStatus.received,
+      );
+      expect(
+        (await reports.find(known.id))!.status,
+        CitizenReportStatus.prioritized,
+      );
     });
 
     test('never moves a report backwards', () async {

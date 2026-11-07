@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auxia_mobile/core/failure.dart';
 import 'package:auxia_mobile/emergencymanagement/domain/model/citizen_report.dart';
+import 'package:auxia_mobile/emergencymanagement/domain/repositories/citizen_report_gateway.dart';
 import 'package:auxia_mobile/emergencymanagement/infrastructure/api/http_citizen_report_gateway.dart';
 import 'package:auxia_mobile/shared/domain/geo_point.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -80,7 +81,7 @@ void main() {
     expect(failure.isRetryable, isTrue);
   });
 
-  test('reads the status, the score and the eta', () async {
+  test('reads the status and the eta, never the score', () async {
     final adapter = FakeHttpAdapter({
       'GET /api/v1/public/field-reports/${_report.id}': (
         200,
@@ -94,8 +95,34 @@ void main() {
 
     final status = result.getRight().toNullable()!;
     expect(status.status, CitizenReportStatus.brigadeOnTheWay);
-    expect(status.score, 94.2);
     expect(status.etaMinutes, 12);
+    expect(status.props, isNot(contains(94.2)));
+  });
+
+  test('the backend sends score and eta as null', () {
+    expect(
+      remoteStatusFromJson({
+        'status': 'PRIORITIZED',
+        'score': null,
+        'etaMinutes': null,
+      }),
+      const RemoteReportStatus(status: CitizenReportStatus.prioritized),
+    );
+  });
+
+  test('an unknown report is a not found, not a retry', () async {
+    final adapter = FakeHttpAdapter({
+      'GET /api/v1/public/field-reports/${_report.id}': (
+        404,
+        {'detail': 'Not found'},
+      ),
+    });
+
+    final result = await HttpCitizenReportGateway(
+      fakeApiClient(adapter),
+    ).status(_report.id);
+
+    expect(result.getLeft().toNullable(), isA<NotFoundFailure>());
   });
 
   test('an unknown status is read as received', () {

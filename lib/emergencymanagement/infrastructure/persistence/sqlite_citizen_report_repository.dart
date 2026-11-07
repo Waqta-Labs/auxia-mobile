@@ -70,7 +70,6 @@ class SqliteCitizenReportRepository implements CitizenReportRepository {
     'audio_path': report.detail.audioPath,
     'photo_path': report.detail.photoPath,
     'status': report.status.name,
-    'score': report.score,
     'eta_minutes': report.etaMinutes,
   };
 
@@ -101,7 +100,6 @@ class SqliteCitizenReportRepository implements CitizenReportRepository {
         audioPath: row['audio_path'] as String?,
         photoPath: row['photo_path'] as String?,
       ),
-      score: (row['score'] as num?)?.toDouble(),
       etaMinutes: row['eta_minutes'] as int?,
     );
   }
