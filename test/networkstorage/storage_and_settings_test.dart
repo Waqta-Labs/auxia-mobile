@@ -1,10 +1,7 @@
-import 'dart:io';
-
 import 'package:auxia_mobile/core/database/app_database.dart';
 import 'package:auxia_mobile/core/localization/locale_cubit.dart';
 import 'package:auxia_mobile/core/localization/locale_store.dart';
 import 'package:auxia_mobile/core/maps/map_region.dart';
-import 'package:auxia_mobile/core/maps/offline_tile_store.dart';
 import 'package:auxia_mobile/core/sync/outbox_repository.dart';
 import 'package:auxia_mobile/core/sync/sync_cubit.dart';
 import 'package:auxia_mobile/emergencymanagement/application/sos_service.dart';
@@ -16,7 +13,6 @@ import 'package:auxia_mobile/identityaccess/domain/model/local_profile.dart';
 import 'package:auxia_mobile/identityaccess/domain/model/user_role.dart';
 import 'package:auxia_mobile/identityaccess/domain/model/valueobjects.dart';
 import 'package:auxia_mobile/identityaccess/interfaces/profile_cubit.dart';
-import 'package:auxia_mobile/networkstorage/application/offline_maps_service.dart';
 import 'package:auxia_mobile/networkstorage/infrastructure/sqlite_storage_stats.dart';
 import 'package:auxia_mobile/networkstorage/interfaces/pages/network_storage/network_storage_cubit.dart';
 import 'package:auxia_mobile/networkstorage/interfaces/pages/network_storage/network_storage_screen.dart';
@@ -83,11 +79,7 @@ void main() {
   });
 
   group('NetworkStorageScreen (A_06 / A_09)', () {
-    late Directory folder;
     late LocaleCubit localeCubit;
-
-    setUp(() => folder = Directory.systemTemp.createTempSync('auxia_tiles_'));
-    tearDown(() => folder.deleteSync(recursive: true));
 
     Future<void> pump(WidgetTester tester, UserRole role) async {
       tester.view.physicalSize = const Size(1170, 6000);
@@ -111,9 +103,6 @@ void main() {
       );
       await profileCubit.load();
       localeCubit = LocaleCubit();
-      final maps = OfflineMapsService(
-        OfflineTileStore(directory: folder, urlTemplate: 'x/{z}/{x}/{y}'),
-      );
       await tester.pumpWidget(
         MultiBlocProvider(
           providers: [
@@ -122,11 +111,10 @@ void main() {
             BlocProvider(create: (_) => SyncCubit(FakeSyncController())),
             BlocProvider(
               create: (_) => NetworkStorageCubit(
-                maps,
                 SqliteStorageStats(AppDatabase(db)),
                 dataChanges: const Stream.empty(),
                 loadRegions: () async => [
-                  MapRegion.around(
+                  MapRegion(
                     id: 'zone-1',
                     name: 'Sector Norte',
                     center: const GeoPoint(-12.0, -77.0),
@@ -153,8 +141,11 @@ void main() {
       expect(find.text('Red y almacenamiento'), findsOneWidget);
       expect(find.text('MAPAS OFFLINE POR REGIÓN'), findsOneWidget);
       expect(find.text('Sector Norte'), findsOneWidget);
-      expect(find.textContaining('No descargado'), findsOneWidget);
-      expect(find.text('Descargar'), findsOneWidget);
+      expect(
+        find.text('Disponible offline · mapa dibujado en el teléfono'),
+        findsOneWidget,
+      );
+      expect(find.text('Descargar'), findsNothing);
       expect(find.text('BASE DE DATOS LOCAL · SQLITE'), findsOneWidget);
       expect(find.text('Reportes locales'), findsOneWidget);
       expect(find.text('Cifrada · OK'), findsOneWidget);

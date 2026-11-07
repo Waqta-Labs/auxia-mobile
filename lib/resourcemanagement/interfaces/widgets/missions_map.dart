@@ -16,29 +16,25 @@ Color scoreColor(double? score) {
   return AppColors.royalBlue;
 }
 
-/// Simplified map of A_07: numbered markers by Urgency Score, the position
-/// of the brigadist and the dashed route to the active mission.
+/// Stylized map of A_07, as in the mockup: a dark grid with a glow by
+/// Urgency Score around each mission, numbered markers, the position of the
+/// brigadist and the dashed route to the active mission.
+///
+/// It is drawn on the device from the coordinates of the missions, with no
+/// map tile server, so it works the same without signal.
 class MissionsMap extends StatefulWidget {
   const MissionsMap({
     super.key,
     required this.missions,
     required this.activeMission,
     required this.myLocation,
-    required this.tileUrlTemplate,
     required this.overlayLabel,
-    this.tileProvider,
   });
 
   final List<Mission> missions;
   final Mission? activeMission;
   final GeoPoint? myLocation;
-
-  /// Raster tiles; null hides them (tests).
-  final String? tileUrlTemplate;
   final String overlayLabel;
-
-  /// Offline-first provider; null uses the network provider.
-  final TileProvider? tileProvider;
 
   @override
   State<MissionsMap> createState() => _MissionsMapState();
@@ -64,7 +60,7 @@ class _MissionsMapState extends State<MissionsMap> {
     final points = _points;
     if (points.length >= 2) {
       return MapOptions(
-        backgroundColor: AppColors.surfaceDeep,
+        backgroundColor: Colors.transparent,
         initialCameraFit: CameraFit.coordinates(
           coordinates: points,
           padding: const EdgeInsets.all(AppSpacing.xxl),
@@ -73,7 +69,7 @@ class _MissionsMapState extends State<MissionsMap> {
       );
     }
     return MapOptions(
-      backgroundColor: AppColors.surfaceDeep,
+      backgroundColor: Colors.transparent,
       initialCenter: points.isEmpty ? _fallbackCenter : points.first,
       initialZoom: 14,
     );
@@ -106,18 +102,23 @@ class _MissionsMapState extends State<MissionsMap> {
         color: AppColors.surfaceDeep,
         child: Stack(
           children: [
+            const Positioned.fill(child: CustomPaint(painter: _GridPainter())),
             FlutterMap(
               mapController: _controller,
               options: _options,
               children: [
-                if (widget.tileUrlTemplate != null)
-                  TileLayer(
-                    urlTemplate: widget.tileUrlTemplate,
-                    subdomains: const ['a', 'b', 'c', 'd'],
-                    userAgentPackageName: 'com.waqtalabs.auxia_mobile',
-                    retinaMode: RetinaMode.isHighDensity(context),
-                    tileProvider: widget.tileProvider,
-                  ),
+                MarkerLayer(
+                  markers: [
+                    for (final mission in widget.missions)
+                      if (mission.location != null)
+                        Marker(
+                          point: _latLng(mission.location!),
+                          width: _glowSize,
+                          height: _glowSize,
+                          child: _Glow(color: scoreColor(mission.score)),
+                        ),
+                  ],
+                ),
                 if (active != null && me != null)
                   PolylineLayer(
                     polylines: [
@@ -166,14 +167,6 @@ class _MissionsMapState extends State<MissionsMap> {
                       ),
                   ],
                 ),
-                if (widget.tileUrlTemplate != null)
-                  const RichAttributionWidget(
-                    alignment: AttributionAlignment.bottomLeft,
-                    attributions: [
-                      TextSourceAttribution('© OpenStreetMap contributors'),
-                      TextSourceAttribution('© CARTO'),
-                    ],
-                  ),
               ],
             ),
             Positioned(
@@ -200,6 +193,58 @@ class _MissionsMapState extends State<MissionsMap> {
       ),
     );
   }
+}
+
+/// Diameter of the glow around a mission.
+const double _glowSize = 180;
+
+/// Soft halo of the color of the score, under the marker.
+class _Glow extends StatelessWidget {
+  const _Glow({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return ExcludeSemantics(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [
+              color.withValues(alpha: 0.55),
+              color.withValues(alpha: 0.18),
+              color.withValues(alpha: 0),
+            ],
+            stops: const [0, 0.55, 1],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Grid of the dark map of the mockup.
+class _GridPainter extends CustomPainter {
+  const _GridPainter();
+
+  static const double _cell = 40;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.white.withValues(alpha: 0.06)
+      ..strokeWidth = 1;
+    for (var x = _cell; x < size.width; x += _cell) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (var y = _cell; y < size.height; y += _cell) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_GridPainter oldDelegate) => false;
 }
 
 class _ScoreMarker extends StatelessWidget {
