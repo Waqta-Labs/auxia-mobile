@@ -1,6 +1,9 @@
 import 'package:auxia_mobile/core/sync/sync_cubit.dart';
 import 'package:auxia_mobile/identityaccess/application/auth_service.dart';
 import 'package:auxia_mobile/identityaccess/application/profile_service.dart';
+import 'package:auxia_mobile/identityaccess/domain/model/brigade_credential.dart';
+import 'package:auxia_mobile/identityaccess/domain/model/local_profile.dart';
+import 'package:auxia_mobile/identityaccess/domain/model/user_role.dart';
 import 'package:auxia_mobile/identityaccess/domain/model/valueobjects.dart';
 import 'package:auxia_mobile/identityaccess/interfaces/profile_cubit.dart';
 import 'package:auxia_mobile/l10n/generated/app_localizations_es.dart';
@@ -173,6 +176,45 @@ void main() {
 
       expect(find.text('Tu cuenta aún no está en una brigada'), findsOneWidget);
       expect(find.text('Elige tu brigada'), findsNothing);
+    });
+
+    LocalProfile credentialProfile(CredentialStatus status, {String? reason}) =>
+        LocalProfile.register(
+          fullName: FullName('Miguel Quispe'),
+          phone: PhoneNumber('987654321'),
+          role: UserRole.brigadist,
+          now: DateTime(2026, 11, 7),
+        ).withCredential(
+          BrigadeCredential.create(
+            organization: OrganizationName('Defensa Civil'),
+            brigadeCode: BrigadeCode('BRG-ALFA-07'),
+            now: DateTime(2026, 11, 7),
+          ).withStatus(status, reason: reason),
+        );
+
+    testWidgets('a pending credential can be checked again', (tester) async {
+      profileCubit.registered(
+        credentialProfile(CredentialStatus.pendingApproval),
+      );
+      await pump(tester);
+
+      expect(
+        find.text('Tu cuenta está pendiente de aprobación'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('sin escribir contraseña'), findsOneWidget);
+      expect(find.text('Consultar estado'), findsOneWidget);
+    });
+
+    testWidgets('a rejected credential shows the reason', (tester) async {
+      profileCubit.registered(
+        credentialProfile(CredentialStatus.rejected, reason: 'Carnet ilegible'),
+      );
+      await pump(tester);
+
+      expect(find.text('Tu credencial fue rechazada'), findsOneWidget);
+      expect(find.text('Carnet ilegible'), findsOneWidget);
+      expect(find.text('Consultar estado'), findsNothing);
     });
   });
 }
