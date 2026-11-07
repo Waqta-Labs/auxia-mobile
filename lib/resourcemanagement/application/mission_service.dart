@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -46,6 +48,11 @@ class MissionService {
   final MissionGateway _gateway;
   final MissionCache _cache;
   final DateTime Function() _clock;
+  final StreamController<void> _changes = StreamController.broadcast();
+
+  /// Fires when the device changes a mission: navigation started or delivery
+  /// registered. A_07 stays alive in its tab while A_08 runs in another one.
+  Stream<void> get changes => _changes.stream;
 
   /// What the brigadist saw last time, available without signal.
   Future<MissionsSnapshot> cached() async => MissionsSnapshot(
@@ -71,8 +78,10 @@ class MissionService {
   }
 
   /// "Iniciar navegación": the mission becomes the active one.
-  Future<void> startNavigation(Mission mission) =>
-      _cache.saveMission(mission.withStatus(MissionStatus.navigating));
+  Future<void> startNavigation(Mission mission) async {
+    await _cache.saveMission(mission.withStatus(MissionStatus.navigating));
+    _changes.add(null);
+  }
 
   /// The delivery [deliveryId] was registered (A_08).
   Future<void> complete(String deliveryId) async {
@@ -81,6 +90,7 @@ class MissionService {
         await _cache.saveMission(mission.withStatus(MissionStatus.completed));
       }
     }
+    _changes.add(null);
   }
 
   /// The backend does not know that the brigadist started navigating or
