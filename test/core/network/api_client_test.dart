@@ -136,6 +136,16 @@ void main() {
     expect(failure.isRetryable, isTrue);
   });
 
+  test('a rate limit keeps the write queued for a retry', () async {
+    final adapter = _FakeAdapter(status: 429, body: {'detail': 'Too many'});
+
+    final result = await _client(adapter).post('/x', parse: (_) => null);
+    final failure = result.getLeft().toNullable()!;
+
+    expect(failure, const ServerFailure('Too many', statusCode: 429));
+    expect(failure.isRetryable, isTrue);
+  });
+
   test('maps a connection error to a network failure', () async {
     final adapter = _FakeAdapter(error: DioExceptionType.connectionError);
 
