@@ -282,10 +282,13 @@ class FakeCitizenReportGateway implements CitizenReportGateway {
 
 /// Mission of the examples: Sector Santa Rosa, score 94.
 Mission sampleMission({
-  String id = 'delivery-1',
+  String id = 'plan-1',
+  String? deliveryId = 'delivery-1',
   MissionStatus status = MissionStatus.assigned,
 }) => Mission(
   id: id,
+  deliveryId: deliveryId,
+  category: MissionCategory.medical,
   brigadeId: 'brigade-alfa',
   brigadeName: 'Brigada Alfa',
   planId: 'plan-1',
@@ -317,40 +320,27 @@ Mission sampleMission({
   assignedAt: DateTime.now().subtract(const Duration(hours: 4)),
 );
 
-/// Mission gateway with a fixed brigade list and mission.
+/// Mission gateway that answers `/me/missions` with [mission].
 class FakeMissionGateway implements MissionGateway {
-  FakeMissionGateway({List<BrigadeSummary>? brigades, this.mission})
-    : brigadeList =
-          brigades ??
-          const [
-            BrigadeSummary(
-              id: 'brigade-alfa',
-              name: 'Brigada Alfa',
-              memberNames: ['Cap. M. Quispe'],
-              distributionPlanId: 'plan-1',
-            ),
-          ];
+  FakeMissionGateway({this.mission});
 
-  List<BrigadeSummary> brigadeList;
   Mission? mission;
+
+  /// Null when the account is in no brigade.
+  String? brigadeName = 'Brigada Alfa';
   Failure? failure;
 
   @override
-  Future<Either<Failure, List<BrigadeSummary>>> brigades() async =>
-      failure != null ? Left(failure!) : Right(brigadeList);
-
-  @override
-  Future<Either<Failure, BrigadeSummary>> brigade(String brigadeId) async {
+  Future<Either<Failure, MyMissions>> myMissions() async {
     if (failure != null) return Left(failure!);
-    for (final brigade in brigadeList) {
-      if (brigade.id == brigadeId) return Right(brigade);
-    }
-    return const Left(NotFoundFailure());
+    return Right(
+      MyMissions(
+        brigadeId: brigadeName == null ? null : 'brigade-alfa',
+        brigadeName: brigadeName,
+        missions: [?mission],
+      ),
+    );
   }
-
-  @override
-  Future<Either<Failure, Mission?>> missionFor(BrigadeSummary brigade) async =>
-      failure != null ? Left(failure!) : Right(mission);
 }
 
 /// Delivery evidence kept in memory.

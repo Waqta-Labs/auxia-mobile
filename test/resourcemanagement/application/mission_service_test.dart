@@ -11,7 +11,7 @@ void main() {
   late Database db;
   late SqliteMissionCache cache;
   late FakeMissionGateway gateway;
-  final now = DateTime(2026, 11, 6, 9, 41);
+  final now = DateTime(2026, 11, 7, 9, 41);
 
   setUp(() async {
     db = await openTestDatabase();
@@ -23,37 +23,34 @@ void main() {
 
   MissionService service() => MissionService(gateway, cache, clock: () => now);
 
-  test('finds the brigade by the name of the brigadist', () async {
-    final result = await service().refresh('cap. m. quispe');
+  test('reads the missions of the brigade of the account', () async {
+    final result = await service().refresh();
 
     final outcome = result.getRight().toNullable()! as MissionsRefreshed;
     expect(outcome.snapshot.brigadeName, 'Brigada Alfa');
     expect(outcome.snapshot.missions.single.zoneName, 'Sector Santa Rosa');
     expect(outcome.snapshot.lastRefresh, now);
-    expect(await cache.myBrigadeId(), 'brigade-alfa');
   });
 
-  test('asks to choose when the name is in no brigade', () async {
-    final result = await service().refresh('Luis Salazar');
+  test('an account without brigade has no missions', () async {
+    await service().refresh();
+    gateway
+      ..brigadeName = null
+      ..mission = null;
 
-    expect(result.getRight().toNullable(), isA<BrigadeChoiceNeeded>());
-    expect(await cache.myBrigadeId(), isNull);
-  });
+    final result = await service().refresh();
 
-  test('remembers the chosen brigade', () async {
-    final missions = service();
-    await missions.chooseBrigade('brigade-alfa');
-
-    final result = await missions.refresh('Luis Salazar');
-
-    expect(result.getRight().toNullable(), isA<MissionsRefreshed>());
+    expect(result.getRight().toNullable(), isA<NoBrigadeLinked>());
+    final cached = await service().cached();
+    expect(cached.missions, isEmpty);
+    expect(cached.brigadeName, isNull);
   });
 
   test('keeps the cached missions when the backend fails', () async {
-    await service().refresh('Cap. M. Quispe');
+    await service().refresh();
     gateway.failure = const NetworkFailure();
 
-    final result = await service().refresh('Cap. M. Quispe');
+    final result = await service().refresh();
 
     expect(result.isLeft(), isTrue);
     expect((await service().cached()).missions, hasLength(1));
@@ -61,10 +58,10 @@ void main() {
 
   test('a refresh does not undo the navigation started offline', () async {
     final missions = service();
-    await missions.refresh('Cap. M. Quispe');
+    await missions.refresh();
     await missions.startNavigation(sampleMission());
 
-    await missions.refresh('Cap. M. Quispe');
+    await missions.refresh();
 
     expect(
       (await missions.cached()).missions.single.status,
@@ -72,9 +69,9 @@ void main() {
     );
   });
 
-  test('a completed delivery completes the mission', () async {
+  test('the registered delivery completes its mission', () async {
     final missions = service();
-    await missions.refresh('Cap. M. Quispe');
+    await missions.refresh();
 
     await missions.complete('delivery-1');
 
@@ -84,11 +81,39 @@ void main() {
     );
   });
 
-  test('the cache keeps every field of the mission', () async {
-    final mission = sampleMission();
+  test('a mission completed in the backend is shown as completed', () async {
+    final missions = service();
+    await missions.refresh();
+    await missions.startNavigation(sampleMission());
+    gateway.mission = sampleMission(status: MissionStatus.completed);
 
-    await cache.saveMission(mission);
+    await missions.refresh();
 
-    expect((await cache.missions()).single, mission);
+    expect(
+      (await missions.cached()).missions.single.status,
+      MissionStatus.completed,
+    );
+  });
+
+  test('the cache keeps the order and every field of the missions', () async {
+    final current = sampleMission();
+    final done = sampleMission(
+      id: 'plan-0',
+      deliveryId: 'delivery-0',
+      status: MissionStatus.completed,
+    );
+
+    await cache.replaceMissions([current, done]);
+    await cache.saveMission(current.withStatus(MissionStatus.navigating));
+
+    final saved = await cache.missions();
+    expect(saved.map((mission) => mission.id), ['plan-1', 'plan-0']);
+    expect(saved.last, done);
+    expect(saved.first, current.withStatus(MissionStatus.navigating));
+  });
+
+  test('the travel time uses 30 km/h rounded up', () {
+    expect(estimatedMinutes(3.2), 7);
+    expect(estimatedMinutes(0.4), 1);
   });
 }

@@ -88,8 +88,7 @@ void main() {
           child: localizedApp(
             MissionsScreen(
               onSignIn: () {},
-              createCubit: (name) =>
-                  MissionsCubit(service, FakeLocationService(), fullName: name),
+              createCubit: () => MissionsCubit(service, FakeLocationService()),
               onVerifyDelivery: verified.add,
               onNavigate: (point) async {
                 navigatedTo.add(point);
@@ -109,6 +108,8 @@ void main() {
 
       expect(find.text('Brigada Alfa'), findsOneWidget);
       expect(find.text('Sector Santa Rosa'), findsOneWidget);
+      expect(find.text('Médico'), findsOneWidget);
+      expect(find.textContaining('Médico · hace'), findsOneWidget);
       expect(find.text('POR QUÉ ESTA PRIORIDAD'), findsOneWidget);
       expect(find.text('Prioridad crítica'), findsOneWidget);
       expect(find.text('12 kits · Kit de víveres'), findsOneWidget);
@@ -128,25 +129,50 @@ void main() {
       expect(find.text('Navegación en curso'), findsOneWidget);
 
       await tester.tap(find.text('Verificar entrega'));
-      expect(verified.single.id, 'delivery-1');
+      expect(verified.single.deliveryId, 'delivery-1');
     });
 
-    testWidgets('a brigadist without brigade chooses one', (tester) async {
-      gateway.brigadeList = const [
-        BrigadeSummary(id: 'b1', name: 'Brigada Uno', memberNames: []),
-        BrigadeSummary(id: 'b2', name: 'Brigada Dos', memberNames: []),
-      ];
-      gateway.mission = null;
+    testWidgets('a delivery not opened yet cannot be verified', (tester) async {
+      gateway.mission = sampleMission(deliveryId: null);
       await pump(tester);
 
-      expect(find.text('Elige tu brigada'), findsOneWidget);
-      await tester.tap(find.text('Brigada Dos'));
+      await tester.tap(find.text('Iniciar navegación'));
       await tester.pumpAndSettle();
 
-      expect(
-        find.textContaining('No tienes misiones asignadas'),
-        findsOneWidget,
+      expect(find.text('Verificar entrega'), findsNothing);
+      expect(find.textContaining('Centro de Mando la abra'), findsOneWidget);
+    });
+
+    testWidgets('without GPS it shows the distance from the base', (
+      tester,
+    ) async {
+      gateway.mission = const Mission(
+        id: 'plan-2',
+        brigadeId: 'b',
+        brigadeName: 'Brigada Alfa',
+        planId: 'plan-2',
+        zoneId: 'z',
+        zoneName: 'Zona sin GPS',
+        priority: PriorityLevel.high,
+        status: MissionStatus.assigned,
+        baseDistanceKm: 3.2,
+        baseEtaMinutes: 7,
       );
+      await pump(tester);
+
+      expect(find.text('3.2 km · 7 min'), findsOneWidget);
+    });
+
+    testWidgets('an account in no brigade is told to ask for it', (
+      tester,
+    ) async {
+      gateway
+        ..brigadeName = null
+        ..mission = null;
+      await pump(tester);
+
+      expect(find.text('Tu cuenta aún no está en una brigada'), findsOneWidget);
+      expect(find.text('Elige tu brigada'), findsNothing);
     });
   });
 }
