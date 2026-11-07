@@ -112,11 +112,7 @@ void main() {
             photoPath: '/p.jpg',
           ),
         )
-        .withStatus(
-          CitizenReportStatus.brigadeOnTheWay,
-          score: 94,
-          etaMinutes: 12,
-        );
+        .withStatus(CitizenReportStatus.brigadeOnTheWay, etaMinutes: 12);
 
     await reports.save(full);
 

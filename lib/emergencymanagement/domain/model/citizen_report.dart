@@ -104,10 +104,10 @@ enum CitizenReportStatus {
   /// Accepted by the backend, waiting for the AI prioritization.
   received,
 
-  /// Scored by the AI ("Priorizado por IA · 94").
+  /// Prioritized by the AI ("Priorizado por IA"). The score is not public.
   prioritized,
 
-  /// A brigade is on the way ("Brigada en camino · ETA 12 min").
+  /// A brigade is on the way ("Brigada en camino", with the ETA if known).
   brigadeOnTheWay;
 
   static CitizenReportStatus fromName(String name) =>
@@ -132,7 +132,6 @@ final class CitizenReport extends Equatable {
     required this.status,
     this.location,
     this.detail = const EmergencyDetail(),
-    this.score,
     this.etaMinutes,
   });
 
@@ -147,9 +146,6 @@ final class CitizenReport extends Equatable {
   final GeoPoint? location;
   final EmergencyDetail detail;
 
-  /// Urgency Score of the AI, once prioritized.
-  final double? score;
-
   /// Minutes until the brigade arrives, once assigned.
   final int? etaMinutes;
 
@@ -160,17 +156,13 @@ final class CitizenReport extends Equatable {
 
   CitizenReport withLocation(GeoPoint location) => _copy(location: location);
 
-  CitizenReport withStatus(
-    CitizenReportStatus status, {
-    double? score,
-    int? etaMinutes,
-  }) => _copy(status: status, score: score, etaMinutes: etaMinutes);
+  CitizenReport withStatus(CitizenReportStatus status, {int? etaMinutes}) =>
+      _copy(status: status, etaMinutes: etaMinutes);
 
   CitizenReport _copy({
     EmergencyDetail? detail,
     GeoPoint? location,
     CitizenReportStatus? status,
-    double? score,
     int? etaMinutes,
   }) => CitizenReport(
     id: id,
@@ -180,7 +172,6 @@ final class CitizenReport extends Equatable {
     status: status ?? this.status,
     location: location ?? this.location,
     detail: detail ?? this.detail,
-    score: score ?? this.score,
     etaMinutes: etaMinutes ?? this.etaMinutes,
   );
 
@@ -240,7 +231,6 @@ final class CitizenReport extends Equatable {
     status,
     location,
     detail,
-    score,
     etaMinutes,
   ];
 }

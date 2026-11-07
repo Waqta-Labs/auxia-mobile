@@ -74,8 +74,8 @@ class MyReportsService {
   Stream<void> get changes => _reports.changes;
 
   /// Asks the backend how far each sent report got: prioritized by the AI
-  /// (with its Urgency Score) or with a brigade on the way (with its ETA).
-  /// Without network nothing changes.
+  /// or with a brigade on the way (with its ETA when known). A report the
+  /// backend does not know is skipped. Without network nothing changes.
   Future<void> refreshStatuses() async {
     for (final report in await _reports.all()) {
       final followed =
@@ -85,16 +85,13 @@ class MyReportsService {
       if (!followed) continue;
 
       final result = await _gateway.status(report.id);
+      if (result case Left(value: NotFoundFailure())) continue;
       if (result case Right(value: final remote)) {
         if (remote.status.completedSteps < report.status.completedSteps) {
           continue;
         }
         await _reports.save(
-          report.withStatus(
-            remote.status,
-            score: remote.score,
-            etaMinutes: remote.etaMinutes,
-          ),
+          report.withStatus(remote.status, etaMinutes: remote.etaMinutes),
         );
       } else {
         // Offline or the channel is not ready: try again later.

@@ -284,15 +284,7 @@
   "statusSaved": "Guardado en dispositivo",
   "statusTransmitting": "Transmitiendo…",
   "statusReceived": "Recibido · en priorización",
-  "statusPrioritized": "Priorizado por IA · {score}",
-  "@statusPrioritized": {
-    "placeholders": {
-      "score": {
-        "type": "String"
-      }
-    }
-  },
-  "statusPrioritizedNoScore": "Priorizado por IA",
+  "statusPrioritized": "Priorizado por IA",
   "statusBrigade": "Brigada en camino · ETA {minutes} min",
   "@statusBrigade": {
     "placeholders": {
