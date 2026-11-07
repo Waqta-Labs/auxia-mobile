@@ -56,6 +56,7 @@ void main() {
     late FakeMissionGateway gateway;
     late InMemorySessionRepository sessions;
     late ProfileCubit profileCubit;
+    late MissionService service;
     final navigatedTo = <GeoPoint>[];
     final verified = <Mission>[];
 
@@ -81,7 +82,7 @@ void main() {
       tester.view.physicalSize = const Size(1170, 5000);
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
-      final service = MissionService(gateway, SqliteMissionCache(db));
+      service = MissionService(gateway, SqliteMissionCache(db));
       await tester.pumpWidget(
         MultiBlocProvider(
           providers: [
@@ -133,6 +134,21 @@ void main() {
 
       await tester.tap(find.text('Verificar entrega'));
       expect(verified.single.deliveryId, 'delivery-1');
+    });
+
+    testWidgets('a delivery registered on A_08 shows the mission completed', (
+      tester,
+    ) async {
+      await pump(tester);
+      await tester.tap(find.text('Iniciar navegación'));
+      await tester.pumpAndSettle();
+
+      // A_08 lives in another tab: this screen stays alive meanwhile.
+      await tester.runAsync(() => service.complete('delivery-1'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Misión completada'), findsOneWidget);
+      expect(find.text('Verificar entrega'), findsNothing);
     });
 
     testWidgets('a delivery not opened yet cannot be verified', (tester) async {

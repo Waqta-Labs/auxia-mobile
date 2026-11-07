@@ -297,6 +297,7 @@ Mission sampleMission({
   String id = 'plan-1',
   String? deliveryId = 'delivery-1',
   MissionStatus status = MissionStatus.assigned,
+  GeoPoint location = const GeoPoint(-12.0432, -77.0428),
 }) => Mission(
   id: id,
   deliveryId: deliveryId,
@@ -308,7 +309,7 @@ Mission sampleMission({
   zoneName: 'Sector Santa Rosa',
   priority: PriorityLevel.critical,
   status: status,
-  location: const GeoPoint(-12.0432, -77.0428),
+  location: location,
   score: 94,
   damage: DamageLevel.severe,
   people: const ZonePeople(

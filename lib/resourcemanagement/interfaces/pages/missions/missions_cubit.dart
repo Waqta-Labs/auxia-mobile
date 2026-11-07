@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -19,7 +21,10 @@ class MissionsCubit extends Cubit<MissionsState> {
   final LocationService _location;
   final DateTime Function() _clock;
 
+  StreamSubscription<void>? _changes;
+
   Future<void> start() async {
+    _changes = _service.changes.listen((_) => unawaited(_reload()));
     final cached = await _service.cached();
     if (isClosed) return;
     emit(state.copyWith(snapshot: cached, loading: false));
@@ -54,7 +59,13 @@ class MissionsCubit extends Cubit<MissionsState> {
 
   Future<void> startNavigation(Mission mission) async {
     await _service.startNavigation(mission);
-    emit(state.copyWith(snapshot: await _service.cached()));
+    await _reload();
+  }
+
+  /// Shows what the device saved, such as a delivery registered on A_08.
+  Future<void> _reload() async {
+    final snapshot = await _service.cached();
+    if (!isClosed) emit(state.copyWith(snapshot: snapshot));
   }
 
   Future<void> _locate() async {
@@ -66,4 +77,10 @@ class MissionsCubit extends Cubit<MissionsState> {
   }
 
   DateTime now() => _clock();
+
+  @override
+  Future<void> close() async {
+    await _changes?.cancel();
+    return super.close();
+  }
 }

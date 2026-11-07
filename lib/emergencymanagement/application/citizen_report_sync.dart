@@ -107,8 +107,9 @@ class MyReportsService {
 
   /// Asks the backend how far each sent report got: prioritized by the AI
   /// (with its Urgency Score) or with a brigade on the way (with its ETA when
-  /// known). A report the backend does not know is skipped. Without network
-  /// nothing changes.
+  /// known). The backend decides: once the brigade delivers, the report goes
+  /// back to prioritized while its zone still needs help. A report the
+  /// backend does not know is skipped. Without network nothing changes.
   Future<void> refreshStatuses() async {
     for (final report in await _reports.all()) {
       final followed =
@@ -120,9 +121,6 @@ class MyReportsService {
       final result = await _gateway.status(report.id);
       if (result case Left(value: NotFoundFailure())) continue;
       if (result case Right(value: final remote)) {
-        if (remote.status.completedSteps < report.status.completedSteps) {
-          continue;
-        }
         await _reports.save(
           report.withStatus(
             remote.status,

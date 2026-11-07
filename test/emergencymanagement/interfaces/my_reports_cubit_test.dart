@@ -77,4 +77,24 @@ void main() {
 
     await onTheWay;
   });
+
+  test('keeps polling while a brigade is on the way', () async {
+    await reports.save(report('SR-0001', CitizenReportStatus.brigadeOnTheWay));
+    answer('SR-0001', CitizenReportStatus.brigadeOnTheWay);
+    final cubit = MyReportsCubit(
+      MyReportsService(reports, gateway),
+      pollEvery: const Duration(milliseconds: 20),
+    );
+    addTearDown(cubit.close);
+    await cubit.start();
+
+    // The delivery was confirmed: the zone is prioritized again.
+    final prioritized = expectLater(
+      cubit.stream,
+      hasStatus('SR-0001', CitizenReportStatus.prioritized),
+    );
+    answer('SR-0001', CitizenReportStatus.prioritized);
+
+    await prioritized;
+  });
 }

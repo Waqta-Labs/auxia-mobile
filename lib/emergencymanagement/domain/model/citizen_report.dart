@@ -166,7 +166,13 @@ final class CitizenReport extends Equatable {
     CitizenReportStatus status, {
     double? score,
     int? etaMinutes,
-  }) => _copy(status: status, score: score, etaMinutes: etaMinutes);
+  }) => _copy(
+    status: status,
+    score: score,
+    etaMinutes: etaMinutes,
+    // The ETA belongs to a brigade on the way only.
+    clearEta: status != CitizenReportStatus.brigadeOnTheWay,
+  );
 
   CitizenReport _copy({
     EmergencyDetail? detail,
@@ -174,6 +180,7 @@ final class CitizenReport extends Equatable {
     CitizenReportStatus? status,
     double? score,
     int? etaMinutes,
+    bool clearEta = false,
   }) => CitizenReport(
     id: id,
     code: code,
@@ -183,7 +190,7 @@ final class CitizenReport extends Equatable {
     location: location ?? this.location,
     detail: detail ?? this.detail,
     score: score ?? this.score,
-    etaMinutes: etaMinutes ?? this.etaMinutes,
+    etaMinutes: clearEta ? null : etaMinutes ?? this.etaMinutes,
   );
 
   /// Free text for the backend, which structures field reports with its NLP

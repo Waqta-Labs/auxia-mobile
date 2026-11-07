@@ -137,12 +137,9 @@ class SyncEngine implements SyncController {
   /// Starts listening to the network and to new writes.
   Future<void> start() async {
     await _outbox.recoverInterrupted();
-    _emit(
-      _state.copyWith(
-        network: await _connectivity.current(),
-        pending: await _outbox.countUnsent(),
-      ),
-    );
+    final network = await _connectivity.current();
+    final pending = await _outbox.countUnsent();
+    _emit(_state.copyWith(network: network, pending: pending));
     _networkSubscription = _connectivity.changes.listen((network) {
       final cameOnline = network.isOnline && !_state.network.isOnline;
       _emit(_state.copyWith(network: network));
@@ -197,10 +194,11 @@ class SyncEngine implements SyncController {
         break;
       }
     }
+    final pending = await _outbox.countUnsent();
     _emit(
       _state.copyWith(
         running: false,
-        pending: await _outbox.countUnsent(),
+        pending: pending,
         lastSyncAt: reachedBackend ? _clock() : null,
       ),
     );
@@ -254,8 +252,13 @@ class SyncEngine implements SyncController {
     );
   }
 
-  Future<void> _refreshPending() async =>
-      _emit(_state.copyWith(pending: await _outbox.countUnsent()));
+  // Each `await` comes before `_state.copyWith`: copying the state first
+  // and emitting it after the await would bring back an older state, such
+  // as a run that already ended.
+  Future<void> _refreshPending() async {
+    final pending = await _outbox.countUnsent();
+    _emit(_state.copyWith(pending: pending));
+  }
 
   void _emit(SyncState state) {
     if (state == _state) return;

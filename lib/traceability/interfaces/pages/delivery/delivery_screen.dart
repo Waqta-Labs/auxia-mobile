@@ -196,32 +196,54 @@ class _DeliveryView extends StatelessWidget {
   }
 
   Future<void> _typeCode(BuildContext context) async {
-    final l10n = AppLocalizations.of(context);
     final cubit = context.read<DeliveryCubit>();
-    final controller = TextEditingController();
     final code = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.deliveryManualCode),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(labelText: l10n.deliveryCodeLabel),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(l10n.actionCancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(controller.text),
-            child: Text(l10n.actionConfirm),
-          ),
-        ],
-      ),
+      builder: (_) => const _ManualCodeDialog(),
     );
-    controller.dispose();
     if (code != null && code.trim().isNotEmpty) cubit.scanned(code);
+  }
+}
+
+/// "Ingresar el código a mano". It owns its text controller, so the field is
+/// released only after the closing animation of the dialog ends.
+class _ManualCodeDialog extends StatefulWidget {
+  const _ManualCodeDialog();
+
+  @override
+  State<_ManualCodeDialog> createState() => _ManualCodeDialogState();
+}
+
+class _ManualCodeDialogState extends State<_ManualCodeDialog> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(l10n.deliveryManualCode),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        decoration: InputDecoration(labelText: l10n.deliveryCodeLabel),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.actionCancel),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: Text(l10n.actionConfirm),
+        ),
+      ],
+    );
   }
 }
 
