@@ -35,7 +35,7 @@ void main() {
   group('CitizenReportHandler', () {
     test('a report accepted by the backend becomes received', () async {
       final report = await newSos();
-      final handler = CitizenReportHandler(reports, gateway);
+      final handler = CitizenReportHandler(reports, gateway, outbox);
 
       final result = await handler.send((await outbox.find(report.id))!);
 
@@ -54,9 +54,57 @@ void main() {
       await CitizenReportHandler(
         reports,
         gateway,
+        outbox,
       ).send((await outbox.find(report.id))!);
 
       expect(gateway.submitted.single.$2, contains('2 niños'));
+    });
+
+    test('once stored, its photo and audio are queued for upload', () async {
+      final report = await newSos();
+      await sos.addDetail(
+        report.id,
+        const EmergencyDetail(photoPath: '/p.jpg', audioPath: '/a.m4a'),
+      );
+
+      await CitizenReportHandler(
+        reports,
+        gateway,
+        outbox,
+      ).send((await outbox.find(report.id))!);
+      await CitizenReportHandler(
+        reports,
+        gateway,
+        outbox,
+      ).send((await outbox.find(report.id))!);
+
+      final evidence = (await outbox.due())
+          .where((item) => item.type == CitizenOutboxTypes.evidence)
+          .toList();
+      expect(
+        evidence.map((item) => item.id),
+        unorderedEquals([
+          CitizenEvidenceQueue.attachmentId(report.id, EvidenceKind.photo),
+          CitizenEvidenceQueue.attachmentId(report.id, EvidenceKind.audio),
+        ]),
+      );
+    });
+
+    test('nothing is queued for an SOS without evidence', () async {
+      final report = await newSos();
+
+      await CitizenReportHandler(
+        reports,
+        gateway,
+        outbox,
+      ).send((await outbox.find(report.id))!);
+
+      expect(
+        (await outbox.due()).where(
+          (item) => item.type == CitizenOutboxTypes.evidence,
+        ),
+        isEmpty,
+      );
     });
 
     test('a failed send leaves the report saved on the device', () async {
@@ -66,6 +114,7 @@ void main() {
       await CitizenReportHandler(
         reports,
         gateway,
+        outbox,
       ).send((await outbox.find(report.id))!);
 
       expect(
@@ -90,7 +139,80 @@ void main() {
     expect(text, startsWith('Detalle adicional del reporte ${report.code}.'));
   });
 
+  test(
+    'a late photo alone follows as an attachment, not as a report',
+    () async {
+      final report = await newSos();
+      await reports.save(report.withStatus(CitizenReportStatus.received));
+
+      await sos.addDetail(
+        report.id,
+        const EmergencyDetail(photoPath: '/p.jpg'),
+      );
+
+      final types = (await outbox.due()).map((item) => item.type);
+      expect(types, contains(CitizenOutboxTypes.evidence));
+      expect(types, isNot(contains(CitizenOutboxTypes.detail)));
+    },
+  );
+
+  group('CitizenEvidenceHandler', () {
+    test('uploads the file with the id of its outbox item', () async {
+      final report = await newSos();
+      await reports.save(report.withStatus(CitizenReportStatus.received));
+      await sos.addDetail(
+        report.id,
+        const EmergencyDetail(photoPath: '/p.jpg'),
+      );
+      final item = (await outbox.due()).firstWhere(
+        (item) => item.type == CitizenOutboxTypes.evidence,
+      );
+
+      final result = await CitizenEvidenceHandler(
+        gateway,
+        exists: (_) async => true,
+      ).send(item);
+
+      expect(result.isRight(), isTrue);
+      expect(gateway.uploaded.single, (report.id, item.id, '/p.jpg'));
+    });
+
+    test('a file no longer on the device leaves the queue', () async {
+      final report = await newSos();
+      await reports.save(report.withStatus(CitizenReportStatus.received));
+      await sos.addDetail(
+        report.id,
+        const EmergencyDetail(audioPath: '/a.m4a'),
+      );
+      final item = (await outbox.due()).firstWhere(
+        (item) => item.type == CitizenOutboxTypes.evidence,
+      );
+
+      final result = await CitizenEvidenceHandler(
+        gateway,
+        exists: (_) async => false,
+      ).send(item);
+
+      expect(result.isRight(), isTrue);
+      expect(gateway.uploaded, isEmpty);
+    });
+  });
+
   group('MyReportsService', () {
+    test('updates sent reports with the AI score', () async {
+      final report = await newSos();
+      await reports.save(report.withStatus(CitizenReportStatus.received));
+      gateway.statuses[report.id] = const Right(
+        RemoteReportStatus(status: CitizenReportStatus.prioritized, score: 94),
+      );
+
+      await MyReportsService(reports, gateway).refreshStatuses();
+
+      final updated = (await reports.find(report.id))!;
+      expect(updated.status, CitizenReportStatus.prioritized);
+      expect(updated.score, 94);
+    });
+
     test('updates sent reports with their stage and eta', () async {
       final report = await newSos();
       await reports.save(report.withStatus(CitizenReportStatus.received));

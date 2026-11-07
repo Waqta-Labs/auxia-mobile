@@ -59,12 +59,12 @@ final class EmergencyDetail extends Equatable {
   final String? photoPath;
 
   bool get isEmpty =>
-      children == 0 &&
-      elderly == 0 &&
-      injured == 0 &&
-      accessConditions.isEmpty &&
-      audioPath == null &&
-      photoPath == null;
+      !describesSituation && audioPath == null && photoPath == null;
+
+  /// Whether it says something the report text can carry: people or access.
+  /// The photo and the audio travel as attachments, not as text.
+  bool get describesSituation =>
+      children > 0 || elderly > 0 || injured > 0 || accessConditions.isNotEmpty;
 
   EmergencyDetail copyWith({
     int? children,
@@ -101,10 +101,12 @@ enum CitizenReportStatus {
   /// Being sent ("Transmitiendo…").
   transmitting,
 
-  /// Accepted by the backend, waiting for the AI prioritization.
+  /// Accepted by the backend but not prioritized yet (no zone, or a zone
+  /// without score). The report has no "Recibido" step: it keeps showing
+  /// "Transmitiendo…" and the app keeps asking (plan D2).
   received,
 
-  /// Prioritized by the AI ("Priorizado por IA"). The score is not public.
+  /// Prioritized by the AI ("Priorizado por IA · 94").
   prioritized,
 
   /// A brigade is on the way ("Brigada en camino", with the ETA if known).
@@ -132,6 +134,7 @@ final class CitizenReport extends Equatable {
     required this.status,
     this.location,
     this.detail = const EmergencyDetail(),
+    this.score,
     this.etaMinutes,
   });
 
@@ -146,6 +149,9 @@ final class CitizenReport extends Equatable {
   final GeoPoint? location;
   final EmergencyDetail detail;
 
+  /// Urgency Score of the zone of the report, once prioritized.
+  final double? score;
+
   /// Minutes until the brigade arrives, once assigned.
   final int? etaMinutes;
 
@@ -156,13 +162,17 @@ final class CitizenReport extends Equatable {
 
   CitizenReport withLocation(GeoPoint location) => _copy(location: location);
 
-  CitizenReport withStatus(CitizenReportStatus status, {int? etaMinutes}) =>
-      _copy(status: status, etaMinutes: etaMinutes);
+  CitizenReport withStatus(
+    CitizenReportStatus status, {
+    double? score,
+    int? etaMinutes,
+  }) => _copy(status: status, score: score, etaMinutes: etaMinutes);
 
   CitizenReport _copy({
     EmergencyDetail? detail,
     GeoPoint? location,
     CitizenReportStatus? status,
+    double? score,
     int? etaMinutes,
   }) => CitizenReport(
     id: id,
@@ -172,6 +182,7 @@ final class CitizenReport extends Equatable {
     status: status ?? this.status,
     location: location ?? this.location,
     detail: detail ?? this.detail,
+    score: score ?? this.score,
     etaMinutes: etaMinutes ?? this.etaMinutes,
   );
 
@@ -231,6 +242,22 @@ final class CitizenReport extends Equatable {
     status,
     location,
     detail,
+    score,
     etaMinutes,
   ];
+}
+
+/// Quick evidence of an SOS that is uploaded after it (A_04): at most one
+/// photo and one audio per SOS.
+enum EvidenceKind {
+  photo('PHOTO'),
+  audio('AUDIO');
+
+  const EvidenceKind(this.code);
+
+  /// Value of `type` in the backend.
+  final String code;
+
+  static EvidenceKind fromCode(String code) =>
+      EvidenceKind.values.firstWhere((kind) => kind.code == code);
 }

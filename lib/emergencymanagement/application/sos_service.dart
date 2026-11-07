@@ -14,6 +14,41 @@ abstract final class CitizenOutboxTypes {
 
   /// A detail added after the SOS already left the device.
   static const String detail = 'citizen_report_detail';
+
+  /// The photo or the audio of an SOS, uploaded once the SOS is stored.
+  static const String evidence = 'citizen_report_evidence';
+}
+
+/// Queues the photo and the audio of an SOS for upload (plan, iteration 1).
+///
+/// The attachment id is derived from the report and the kind of evidence, so
+/// queuing the same evidence twice uploads it once: the outbox keeps one item
+/// and the backend answers 200 to a repeated id.
+class CitizenEvidenceQueue {
+  CitizenEvidenceQueue(this._outbox);
+
+  final OutboxRepository _outbox;
+
+  static String attachmentId(String reportId, EvidenceKind kind) =>
+      const Uuid().v5(Namespace.url.value, 'auxia:sos/$reportId/${kind.code}');
+
+  /// Queues every evidence of [report] that is not queued yet.
+  Future<void> enqueueFor(CitizenReport report) async {
+    final files = {
+      EvidenceKind.photo: report.detail.photoPath,
+      EvidenceKind.audio: report.detail.audioPath,
+    };
+    for (final MapEntry(key: kind, value: path) in files.entries) {
+      if (path == null) continue;
+      final id = attachmentId(report.id, kind);
+      if (await _outbox.find(id) != null) continue;
+      await _outbox.enqueue(
+        type: CitizenOutboxTypes.evidence,
+        payload: {'reportId': report.id, 'kind': kind.code, 'path': path},
+        id: id,
+      );
+    }
+  }
 }
 
 /// Use cases of the one-tap SOS (A_03) and its optional detail (A_04).
@@ -75,7 +110,8 @@ class SosService {
 
   /// "Guardar y Enviar Auxilio" (A_04). If the SOS is still on the device,
   /// the detail travels with it; if it already left, the detail follows as
-  /// a second report that names the first one.
+  /// a second report that names the first one (only when it describes
+  /// people or access) and its photo and audio follow as attachments.
   Future<Either<Failure, CitizenReport>> addDetail(
     String reportId,
     EmergencyDetail detail,
@@ -84,11 +120,15 @@ class SosService {
     if (report == null) throw StateError('Unknown report $reportId');
     final updated = report.withDetail(detail);
     await _reports.save(updated);
-    if (!report.isUnsent && !detail.isEmpty) {
-      await _outbox.enqueue(
-        type: CitizenOutboxTypes.detail,
-        payload: {'reportId': report.id},
-      );
+    if (!report.isUnsent) {
+      if (detail.describesSituation) {
+        await _outbox.enqueue(
+          type: CitizenOutboxTypes.detail,
+          payload: {'reportId': report.id},
+        );
+      }
+      // The SOS is already stored: its evidence can follow right away.
+      await CitizenEvidenceQueue(_outbox).enqueueFor(updated);
     }
     return updated;
   });

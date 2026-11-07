@@ -5,6 +5,7 @@ import 'package:auxia_mobile/emergencymanagement/domain/model/citizen_report.dar
 import 'package:auxia_mobile/emergencymanagement/domain/repositories/citizen_report_gateway.dart';
 import 'package:auxia_mobile/emergencymanagement/infrastructure/api/http_citizen_report_gateway.dart';
 import 'package:auxia_mobile/shared/domain/geo_point.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/test_app.dart';
@@ -81,7 +82,7 @@ void main() {
     expect(failure.isRetryable, isTrue);
   });
 
-  test('reads the status and the eta, never the score', () async {
+  test('reads the status, the score and the eta', () async {
     final adapter = FakeHttpAdapter({
       'GET /api/v1/public/field-reports/${_report.id}': (
         200,
@@ -95,8 +96,69 @@ void main() {
 
     final status = result.getRight().toNullable()!;
     expect(status.status, CitizenReportStatus.brigadeOnTheWay);
+    expect(status.score, 94.2);
     expect(status.etaMinutes, 12);
-    expect(status.props, isNot(contains(94.2)));
+  });
+
+  test('uploads an evidence with PUT and the type of the file', () async {
+    final adapter = FakeHttpAdapter({
+      'PUT /api/v1/public/field-reports/${_report.id}/attachments/a1': (
+        201,
+        {'attachmentId': 'a1', 'type': 'AUDIO'},
+      ),
+    });
+    DioMediaType? sentType;
+
+    final result =
+        await HttpCitizenReportGateway(
+          fakeApiClient(adapter),
+          readFile: (path, type) async {
+            sentType = type;
+            return MultipartFile.fromBytes([1, 2, 3], filename: 'audio.m4a');
+          },
+        ).uploadEvidence(
+          _report.id,
+          attachmentId: 'a1',
+          path: '/files/audio_1.m4a',
+        );
+
+    expect(result.isRight(), isTrue);
+    expect(adapter.requests.single.method, 'PUT');
+    expect(sentType?.mimeType, 'audio/mp4');
+  });
+
+  test('an evidence before its SOS is stored is retried', () async {
+    final adapter = FakeHttpAdapter({});
+
+    final result = await HttpCitizenReportGateway(
+      fakeApiClient(adapter),
+      readFile: (path, type) async => MultipartFile.fromBytes([1]),
+    ).uploadEvidence(_report.id, attachmentId: 'a1', path: '/files/photo.jpg');
+
+    expect(result.getLeft().toNullable()!.isRetryable, isTrue);
+  });
+
+  test('a rejected evidence is not retried', () async {
+    final adapter = FakeHttpAdapter({
+      'PUT /api/v1/public/field-reports/${_report.id}/attachments/a1': (
+        422,
+        {'detail': 'Second photo'},
+      ),
+    });
+
+    final result = await HttpCitizenReportGateway(
+      fakeApiClient(adapter),
+      readFile: (path, type) async => MultipartFile.fromBytes([1]),
+    ).uploadEvidence(_report.id, attachmentId: 'a1', path: '/files/photo.jpg');
+
+    expect(result.getLeft().toNullable()!.isRetryable, isFalse);
+  });
+
+  test('the type of an evidence comes from its extension', () {
+    expect(evidenceType('/a.M4A').mimeType, 'audio/mp4');
+    expect(evidenceType('/a.wav').mimeType, 'audio/wav');
+    expect(evidenceType('/p.png').mimeType, 'image/png');
+    expect(evidenceType('/p.jpg').mimeType, 'image/jpeg');
   });
 
   test('the backend sends score and eta as null', () {
