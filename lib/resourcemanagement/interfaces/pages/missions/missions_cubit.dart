@@ -54,7 +54,8 @@ class MissionsCubit extends Cubit<MissionsState> {
 
   Future<void> startNavigation(Mission mission) async {
     await _service.startNavigation(mission);
-    emit(state.copyWith(snapshot: await _service.cached()));
+    final snapshot = await _service.cached();
+    emit(state.copyWith(snapshot: snapshot));
   }
 
   Future<void> _locate() async {

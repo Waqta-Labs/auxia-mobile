@@ -183,4 +183,23 @@ void main() {
     expect(sync.state.network.isOnline, isTrue);
     await sync.stop();
   });
+
+  test(
+    'the counter of pending writes does not undo the end of a run',
+    () async {
+      final handler = _ScriptedHandler([]);
+      final sync = engine(handler);
+      await sync.start();
+
+      // Every write to the queue refreshes the counter while the run sends it.
+      await outbox.enqueue(type: 'citizen_report', payload: const {}, id: 'a');
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      expect(handler.sent, ['a']);
+      expect(sync.state.running, isFalse);
+      expect(sync.state.lastSyncAt, now);
+      expect(sync.state.pending, 0);
+      await sync.stop();
+    },
+  );
 }
