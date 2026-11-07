@@ -1,12 +1,9 @@
-import 'dart:io';
-
 import 'package:auxia_mobile/app.dart';
 import 'package:auxia_mobile/core/config/app_config.dart';
 import 'package:auxia_mobile/core/database/app_database.dart';
 import 'package:auxia_mobile/core/di/service_locator.dart';
 import 'package:auxia_mobile/core/localization/locale_cubit.dart';
 import 'package:auxia_mobile/core/location/location_service.dart';
-import 'package:auxia_mobile/core/maps/offline_tile_store.dart';
 import 'package:auxia_mobile/core/routing/app_router.dart';
 import 'package:auxia_mobile/core/sync/outbox_repository.dart';
 import 'package:auxia_mobile/core/sync/sync_cubit.dart';
@@ -18,7 +15,6 @@ import 'package:auxia_mobile/identityaccess/application/auth_service.dart';
 import 'package:auxia_mobile/identityaccess/application/profile_service.dart';
 import 'package:auxia_mobile/identityaccess/infrastructure/device/id_card_camera.dart';
 import 'package:auxia_mobile/identityaccess/interfaces/profile_cubit.dart';
-import 'package:auxia_mobile/networkstorage/application/offline_maps_service.dart';
 import 'package:auxia_mobile/networkstorage/application/storage_stats.dart';
 import 'package:auxia_mobile/networkstorage/infrastructure/sqlite_storage_stats.dart';
 import 'package:auxia_mobile/resourcemanagement/application/mission_service.dart';
@@ -69,10 +65,7 @@ class AppHarness {
 
     getIt
       ..registerSingleton<AppConfig>(
-        const AppConfig(
-          apiBaseUrl: 'https://api.test',
-          mapTileUrlTemplate: null,
-        ),
+        const AppConfig(apiBaseUrl: 'https://api.test'),
       )
       ..registerSingleton<ProfileService>(profileService)
       ..registerSingleton<AuthService>(auth)
@@ -100,14 +93,6 @@ class AppHarness {
       ..registerSingleton<ExplorerLauncher>(ExplorerLauncher())
       ..registerSingleton<StorageStatsSource>(
         SqliteStorageStats(AppDatabase(db)),
-      )
-      ..registerSingleton<OfflineMapsService>(
-        OfflineMapsService(
-          OfflineTileStore(
-            directory: Directory.systemTemp.createTempSync('auxia_'),
-            urlTemplate: 'x/{z}/{x}/{y}',
-          ),
-        ),
       );
     return harness;
   }

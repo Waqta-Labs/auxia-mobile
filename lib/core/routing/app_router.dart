@@ -25,7 +25,6 @@ import '../../identityaccess/interfaces/pages/sign_in/sign_in_cubit.dart';
 import '../../identityaccess/interfaces/pages/sign_in/sign_in_screen.dart';
 import '../../identityaccess/interfaces/profile_cubit.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../networkstorage/application/offline_maps_service.dart';
 import '../../networkstorage/application/storage_stats.dart';
 import '../../networkstorage/interfaces/pages/network_storage/network_storage_cubit.dart';
 import '../../networkstorage/interfaces/pages/network_storage/network_storage_screen.dart';
@@ -40,11 +39,8 @@ import '../../traceability/application/delivery_service.dart';
 import '../../traceability/infrastructure/device/explorer_launcher.dart';
 import '../../traceability/interfaces/pages/delivery/delivery_cubit.dart';
 import '../../traceability/interfaces/pages/delivery/delivery_screen.dart';
-import '../config/app_config.dart';
 import '../di/service_locator.dart';
 import '../location/location_service.dart';
-import '../maps/offline_first_tile_provider.dart';
-import '../maps/offline_tile_store.dart';
 import '../sync/outbox_repository.dart';
 import '../sync/sync_cubit.dart';
 import 'delivery_tab.dart';
@@ -209,7 +205,6 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
                   ).regionMyLocation;
                   return BlocProvider(
                     create: (_) => NetworkStorageCubit(
-                      getIt<OfflineMapsService>(),
                       getIt<StorageStatsSource>(),
                       dataChanges: getIt<OutboxRepository>().changes,
                       loadRegions: () => offlineRegions(
@@ -285,10 +280,6 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
                   onVerifyDelivery: (mission) =>
                       context.go(AppRoutes.deliveryFor(mission.id)),
                   onNavigate: getIt<NavigationLauncher>().navigateTo,
-                  tileUrlTemplate: getIt<AppConfig>().mapTileUrlTemplate,
-                  tileProvider: getIt.isRegistered<OfflineTileStore>()
-                      ? OfflineFirstTileProvider(getIt<OfflineTileStore>())
-                      : null,
                 ),
               ),
             ],
@@ -327,7 +318,6 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
                   ).regionMyLocation;
                   return BlocProvider(
                     create: (_) => NetworkStorageCubit(
-                      getIt<OfflineMapsService>(),
                       getIt<StorageStatsSource>(),
                       dataChanges: getIt<OutboxRepository>().changes,
                       loadRegions: () => offlineRegions(

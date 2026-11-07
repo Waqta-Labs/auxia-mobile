@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
 
 import '../../../../core/sync/sync_cubit.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -28,8 +27,6 @@ class MissionsScreen extends StatelessWidget {
     required this.createCubit,
     required this.onVerifyDelivery,
     required this.onNavigate,
-    this.tileUrlTemplate,
-    this.tileProvider,
   });
 
   /// Opens A_10.
@@ -43,10 +40,6 @@ class MissionsScreen extends StatelessWidget {
 
   /// Opens turn-by-turn navigation; returns false if it could not.
   final Future<bool> Function(GeoPoint destination) onNavigate;
-  final String? tileUrlTemplate;
-
-  /// Serves the tiles downloaded for offline use first.
-  final TileProvider? tileProvider;
 
   @override
   Widget build(BuildContext context) {
@@ -116,8 +109,6 @@ class MissionsScreen extends StatelessWidget {
       child: _MissionsView(
         onVerifyDelivery: onVerifyDelivery,
         onNavigate: onNavigate,
-        tileUrlTemplate: tileUrlTemplate,
-        tileProvider: tileProvider,
       ),
     );
   }
@@ -127,14 +118,10 @@ class _MissionsView extends StatelessWidget {
   const _MissionsView({
     required this.onVerifyDelivery,
     required this.onNavigate,
-    required this.tileUrlTemplate,
-    required this.tileProvider,
   });
 
   final void Function(Mission mission) onVerifyDelivery;
   final Future<bool> Function(GeoPoint destination) onNavigate;
-  final String? tileUrlTemplate;
-  final TileProvider? tileProvider;
 
   @override
   Widget build(BuildContext context) {
@@ -168,8 +155,6 @@ class _MissionsView extends StatelessWidget {
                 missions: state.openMissions,
                 activeMission: state.activeMission,
                 myLocation: state.myLocation,
-                tileUrlTemplate: tileUrlTemplate,
-                tileProvider: tileProvider,
                 overlayLabel: l10n.missionsOnMap(state.openMissions.length),
               ),
             ),
