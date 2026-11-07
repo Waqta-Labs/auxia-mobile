@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../application/auth_service.dart';
+import '../application/brigade_registration_service.dart';
 import '../application/profile_service.dart';
 import '../domain/model/local_profile.dart';
 import '../domain/model/session.dart';
@@ -34,11 +35,15 @@ class ProfileState extends Equatable {
 /// App-wide holder of the local profile and the brigadist session. The
 /// router listens to it to send each role to its own bottom navigation.
 class ProfileCubit extends Cubit<ProfileState> {
-  ProfileCubit(this._profiles, this._auth)
+  ProfileCubit(this._profiles, this._auth, {this.registrations})
     : super(const ProfileState.loading());
 
   final ProfileService _profiles;
   final AuthService _auth;
+
+  /// Follows the credential of A_02 until it is approved (plan D3).
+  final BrigadeRegistrationService? registrations;
+  Future<void>? _checking;
 
   Future<void> load() async {
     final result = await _profiles.currentProfile();
@@ -49,6 +54,28 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
     final session = profile.isBrigadist ? await _auth.currentSession() : null;
     emit(ProfileState.present(profile, session: session));
+    if (profile.credential != null) await checkRegistration();
+  }
+
+  /// Asks whether the credential of A_02 was decided and, once approved,
+  /// enters with the device secret. Called on start, after each sync pass
+  /// and from A_07. Concurrent calls share one check.
+  Future<void> checkRegistration() =>
+      _checking ??= _check().whenComplete(() => _checking = null);
+
+  Future<void> _check() async {
+    final service = registrations;
+    final credential = state.profile?.credential;
+    if (service == null || credential == null) return;
+    if (!credential.isPending && !credential.isApproved) return;
+    final check = await service.refresh();
+    if (check == null || isClosed) return;
+    emit(
+      ProfileState.present(
+        check.profile,
+        session: check.session ?? state.session,
+      ),
+    );
   }
 
   /// Called after a successful registration (A_01 or A_02).

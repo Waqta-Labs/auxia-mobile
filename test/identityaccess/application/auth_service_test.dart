@@ -52,10 +52,10 @@ void main() {
           role: UserRole.brigadist,
           now: now,
         ).withCredential(
-          BrigadeCredential(
+          BrigadeCredential.create(
             organization: OrganizationName('Defensa Civil'),
             brigadeCode: BrigadeCode('BRG-ALFA-07'),
-            submittedAt: now,
+            now: now,
           ),
         );
 

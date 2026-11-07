@@ -91,6 +91,18 @@ class FakeAuthenticationGateway implements AuthenticationGateway {
     lastEmail = email;
     return result;
   }
+
+  /// Registration ids of the device sign-ins.
+  final List<String> deviceSignIns = [];
+
+  @override
+  Future<Either<Failure, Session>> deviceSignIn({
+    required String registrationId,
+    required String deviceSecret,
+  }) async {
+    deviceSignIns.add(registrationId);
+    return result;
+  }
 }
 
 Session brigadeSession({

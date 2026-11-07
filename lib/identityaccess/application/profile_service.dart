@@ -1,18 +1,26 @@
 import 'package:fpdart/fpdart.dart';
 
 import '../../core/failure.dart';
+import '../../core/sync/outbox_repository.dart';
 import '../domain/model/brigade_credential.dart';
 import '../domain/model/local_profile.dart';
 import '../domain/model/user_role.dart';
 import '../domain/model/valueobjects.dart';
 import '../domain/repositories/profile_repository.dart';
 
+/// Outbox types of Identity and Access.
+abstract final class IdentityOutboxTypes {
+  /// The brigade credential of A_02, sent for approval (plan D3).
+  static const String brigadeRegistration = 'brigade_registration';
+}
+
 /// Use cases of the registration flow (A_01 and A_02).
 class ProfileService {
-  ProfileService(this._repository, {DateTime Function()? clock})
+  ProfileService(this._repository, {this._outbox, DateTime Function()? clock})
     : _clock = clock ?? DateTime.now;
 
   final ProfileRepository _repository;
+  final OutboxRepository? _outbox;
   final DateTime Function() _clock;
 
   Future<Either<Failure, LocalProfile?>> currentProfile() =>
@@ -49,16 +57,37 @@ class ProfileService {
           role: UserRole.brigadist,
           now: now,
         ).withCredential(
-          BrigadeCredential(
+          BrigadeCredential.create(
             organization: organization,
             brigadeCode: brigadeCode,
-            submittedAt: now,
+            now: now,
             idCardPhotoPath: idCardPhotoPath,
           ),
         );
     await _repository.save(profile);
+    // Sent to the backend by the sync queue, even without signal now.
+    await _outbox?.enqueue(
+      type: IdentityOutboxTypes.brigadeRegistration,
+      payload: const {},
+      id: profile.credential!.registrationId,
+    );
     return profile;
   });
+
+  /// Saves the profile with the credential in its new [status].
+  Future<LocalProfile?> updateCredential(
+    CredentialStatus status, {
+    String? reason,
+  }) async {
+    final profile = await _repository.load();
+    final credential = profile?.credential;
+    if (profile == null || credential == null) return null;
+    final updated = profile.withCredential(
+      credential.withStatus(status, reason: reason),
+    );
+    await _repository.save(updated);
+    return updated;
+  }
 
   /// "Cambiar de rol": forgets the profile so the user registers again.
   Future<Either<Failure, Unit>> resetProfile() => _guard(() async {

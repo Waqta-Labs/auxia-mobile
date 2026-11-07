@@ -91,10 +91,10 @@ void main() {
 
     expect(
       () => citizen.withCredential(
-        BrigadeCredential(
+        BrigadeCredential.create(
           organization: OrganizationName('Defensa Civil'),
           brigadeCode: BrigadeCode('BRG-01'),
-          submittedAt: now,
+          now: now,
         ),
       ),
       throwsStateError,
@@ -109,10 +109,10 @@ void main() {
           role: UserRole.brigadist,
           now: now,
         ).withCredential(
-          BrigadeCredential(
+          BrigadeCredential.create(
             organization: OrganizationName('Defensa Civil · Región Lima'),
             brigadeCode: BrigadeCode('BRG-ALFA-07'),
-            submittedAt: now,
+            now: now,
           ),
         );
 

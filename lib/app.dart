@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import 'core/localization/locale_cubit.dart';
 import 'core/sync/sync_cubit.dart';
+import 'core/sync/sync_engine.dart';
 import 'core/theme/app_theme.dart';
 import 'identityaccess/interfaces/profile_cubit.dart';
 import 'l10n/generated/app_localizations.dart';
@@ -32,20 +33,28 @@ class AuxiaApp extends StatelessWidget {
         BlocProvider.value(value: profileCubit),
         BlocProvider.value(value: syncCubit),
       ],
-      child: BlocBuilder<LocaleCubit, Locale>(
-        builder: (context, locale) => MaterialApp.router(
-          onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.dark(),
-          locale: locale,
-          supportedLocales: LocaleCubit.supported,
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          routerConfig: router,
+      // "Consulta el estado al sincronizar" (plan D3): after each sync pass
+      // the app asks whether the credential of A_02 was decided.
+      child: BlocListener<SyncCubit, SyncState>(
+        listenWhen: (previous, current) =>
+            current.lastSyncAt != previous.lastSyncAt &&
+            current.network.isOnline,
+        listener: (_, _) => profileCubit.checkRegistration(),
+        child: BlocBuilder<LocaleCubit, Locale>(
+          builder: (context, locale) => MaterialApp.router(
+            onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.dark(),
+            locale: locale,
+            supportedLocales: LocaleCubit.supported,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            routerConfig: router,
+          ),
         ),
       ),
     );

@@ -31,6 +31,9 @@ class ApiClient {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           options.headers['Accept-Language'] = language();
+          // Public and sign-in endpoints need no session; skipping them also
+          // lets the session be renewed without asking for itself.
+          if (_isAnonymous(options.path)) return handler.next(options);
           final token = await accessToken();
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
@@ -43,12 +46,20 @@ class ApiClient {
 
   final Dio _dio;
 
+  static bool _isAnonymous(String path) =>
+      path.startsWith('/public/') || path.startsWith('/auth/');
+
   Future<Either<Failure, T>> get<T>(
     String path, {
     Map<String, Object?>? query,
+    Map<String, String>? headers,
     required T Function(Object? data) parse,
   }) => _send(
-    () => _dio.get<Object?>(path, queryParameters: _clean(query)),
+    () => _dio.get<Object?>(
+      path,
+      queryParameters: _clean(query),
+      options: headers == null ? null : Options(headers: headers),
+    ),
     parse,
   );
 

@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:fpdart/fpdart.dart';
 
 import '../../core/failure.dart';
+import '../domain/model/brigade_credential.dart';
 import '../domain/model/local_profile.dart';
 import '../domain/model/session.dart';
 import '../domain/model/user_role.dart';
@@ -47,7 +48,8 @@ class SignedIn extends Equatable {
   List<Object> get props => [profile, session];
 }
 
-/// Sign-in of brigadists with the institutional account (A_10, US-21).
+/// Sign-in of brigadists: with the institutional account (A_10, US-21) or
+/// with the device secret of an approved credential (A_02, plan D3).
 class AuthService {
   AuthService(
     this._gateway,
@@ -71,6 +73,22 @@ class AuthService {
       email: email.value,
       password: password.value,
     );
+    return _accept(result);
+  }
+
+  /// Signs in with the device secret of the approved [credential].
+  Future<Either<SignInError, SignedIn>> signInWithDevice(
+    BrigadeCredential credential,
+  ) async => _accept(
+    await _gateway.deviceSignIn(
+      registrationId: credential.registrationId,
+      deviceSecret: credential.deviceSecret,
+    ),
+  );
+
+  Future<Either<SignInError, SignedIn>> _accept(
+    Either<Failure, Session> result,
+  ) async {
     final Session session;
     switch (result) {
       case Left(value: final failure):
@@ -101,11 +119,32 @@ class AuthService {
     }
   }
 
-  /// Bearer token for the API, or null without a valid session.
+  /// Bearer token for the API, or null without a valid session. An expired
+  /// session of an approved credential is renewed with the same device
+  /// secret (plan D3); concurrent calls share one renewal.
   Future<String?> accessToken() async {
     final session = await currentSession();
-    if (session == null || session.isExpiredAt(_clock())) return null;
-    return session.token;
+    // Without session (never signed in, or signed out) there is nothing to
+    // renew: the brigadist chose to leave.
+    if (session == null) return null;
+    if (!session.isExpiredAt(_clock())) return session.token;
+    final renewed = await (_renewal ??= _renewWithDevice().whenComplete(
+      () => _renewal = null,
+    ));
+    return renewed?.token;
+  }
+
+  Future<Session?>? _renewal;
+
+  Future<Session?> _renewWithDevice() async {
+    try {
+      final credential = (await _profiles.load())?.credential;
+      if (credential == null || !credential.isApproved) return null;
+      final result = await signInWithDevice(credential);
+      return result.toNullable()?.session;
+    } on Exception {
+      return null;
+    }
   }
 
   Future<void> signOut() async {
