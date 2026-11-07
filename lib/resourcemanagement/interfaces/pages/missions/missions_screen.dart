@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import '../../../../core/sync/sync_cubit.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../identityaccess/domain/model/brigade_credential.dart';
 import '../../../../identityaccess/interfaces/profile_cubit.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../shared/domain/geo_point.dart';
@@ -51,24 +52,58 @@ class MissionsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final session = context.select((ProfileCubit cubit) => cubit.state.session);
+    final credential = context.select(
+      (ProfileCubit cubit) => cubit.state.profile?.credential,
+    );
 
     if (session == null || session.isExpiredAt(DateTime.now())) {
+      final rejected = credential?.status == CredentialStatus.rejected;
+      final followed = credential != null && !rejected;
       return _Frame(
         badge: StatusChip(label: l10n.roleBrigadist, tone: StatusTone.info),
+        onRefresh: followed
+            ? context.read<ProfileCubit>().checkRegistration
+            : null,
         children: [
           SectionLabel(l10n.missionsAssigned),
           const SizedBox(height: AppSpacing.sm),
           EmptyState(
-            icon: session == null
+            icon: rejected
+                ? Icons.block
+                : session == null
                 ? Icons.hourglass_top
                 : Icons.lock_clock_outlined,
-            title: session == null ? l10n.missionsPendingTitle : null,
-            message: session == null
-                ? l10n.missionsPendingDetail
+            title: rejected
+                ? l10n.credentialRejectedTitle
+                : session == null
+                ? l10n.missionsPendingTitle
+                : null,
+            message: rejected
+                ? (credential?.rejectionReason ?? l10n.credentialRejectedDetail)
+                : session == null
+                ? (credential == null
+                      ? l10n.missionsPendingDetail
+                      : l10n.missionsPendingCredential)
                 : l10n.errorSessionExpired,
-            action: FilledButton(
-              onPressed: onSignIn,
-              child: Text(l10n.actionGoToSignIn),
+            action: Column(
+              children: [
+                if (followed)
+                  FilledButton(
+                    onPressed: context.read<ProfileCubit>().checkRegistration,
+                    child: Text(l10n.actionCheckStatus),
+                  ),
+                if (followed) const SizedBox(height: AppSpacing.xs),
+                if (followed)
+                  TextButton(
+                    onPressed: onSignIn,
+                    child: Text(l10n.actionGoToSignIn),
+                  )
+                else
+                  FilledButton(
+                    onPressed: onSignIn,
+                    child: Text(l10n.actionGoToSignIn),
+                  ),
+              ],
             ),
           ),
         ],

@@ -5,7 +5,7 @@ import '../../../core/network/api_client.dart';
 import '../../domain/model/session.dart';
 import '../../domain/repositories/session_repository.dart';
 
-/// `POST /api/v1/auth/sign-in` of the AuxIA backend.
+/// Sign-in endpoints of the AuxIA backend.
 class HttpAuthenticationGateway implements AuthenticationGateway {
   HttpAuthenticationGateway(this._client);
 
@@ -18,6 +18,16 @@ class HttpAuthenticationGateway implements AuthenticationGateway {
   }) => _client.post(
     '/auth/sign-in',
     body: {'email': email, 'password': password},
+    parse: (data) => authenticatedUserFromJson(data! as Map<String, Object?>),
+  );
+
+  @override
+  Future<Either<Failure, Session>> deviceSignIn({
+    required String registrationId,
+    required String deviceSecret,
+  }) => _client.post(
+    '/auth/device-sign-in',
+    body: {'registrationId': registrationId, 'deviceSecret': deviceSecret},
     parse: (data) => authenticatedUserFromJson(data! as Map<String, Object?>),
   );
 }

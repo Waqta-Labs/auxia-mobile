@@ -41,11 +41,14 @@ extension ProfileJson on LocalProfile {
     'createdAt': createdAt.toIso8601String(),
     if (credential case final credential?)
       'credential': {
+        'registrationId': credential.registrationId,
+        'deviceSecret': credential.deviceSecret,
         'organization': credential.organization.value,
         'brigadeCode': credential.brigadeCode.value,
         'submittedAt': credential.submittedAt.toIso8601String(),
         'idCardPhotoPath': credential.idCardPhotoPath,
         'status': credential.status.name,
+        'rejectionReason': credential.rejectionReason,
       },
   };
 
@@ -61,13 +64,34 @@ extension ProfileJson on LocalProfile {
     );
     final credential = json['credential'] as Map<String, Object?>?;
     if (credential == null) return profile;
+    final organization = OrganizationName(
+      credential['organization']! as String,
+    );
+    final brigadeCode = BrigadeCode(credential['brigadeCode']! as String);
+    final submittedAt = DateTime.parse(credential['submittedAt']! as String);
+    // A credential saved before the registration endpoint existed has no
+    // ids yet: it gets new ones and is sent as a new registration.
+    final registrationId = credential['registrationId'] as String?;
+    if (registrationId == null) {
+      return profile.withCredential(
+        BrigadeCredential.create(
+          organization: organization,
+          brigadeCode: brigadeCode,
+          now: submittedAt,
+          idCardPhotoPath: credential['idCardPhotoPath'] as String?,
+        ),
+      );
+    }
     return profile.withCredential(
       BrigadeCredential(
-        organization: OrganizationName(credential['organization']! as String),
-        brigadeCode: BrigadeCode(credential['brigadeCode']! as String),
-        submittedAt: DateTime.parse(credential['submittedAt']! as String),
+        registrationId: registrationId,
+        deviceSecret: credential['deviceSecret']! as String,
+        organization: organization,
+        brigadeCode: brigadeCode,
+        submittedAt: submittedAt,
         idCardPhotoPath: credential['idCardPhotoPath'] as String?,
         status: CredentialStatus.fromName(credential['status']! as String),
+        rejectionReason: credential['rejectionReason'] as String?,
       ),
     );
   }

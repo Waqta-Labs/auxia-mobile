@@ -15,10 +15,13 @@ import '../../emergencymanagement/infrastructure/api/http_citizen_report_gateway
 import '../../emergencymanagement/infrastructure/device/device_quick_evidence.dart';
 import '../../emergencymanagement/infrastructure/persistence/sqlite_citizen_report_repository.dart';
 import '../../identityaccess/application/auth_service.dart';
+import '../../identityaccess/application/brigade_registration_service.dart';
 import '../../identityaccess/application/profile_service.dart';
+import '../../identityaccess/domain/repositories/brigade_registration_gateway.dart';
 import '../../identityaccess/domain/repositories/profile_repository.dart';
 import '../../identityaccess/domain/repositories/session_repository.dart';
 import '../../identityaccess/infrastructure/api/http_authentication_gateway.dart';
+import '../../identityaccess/infrastructure/api/http_brigade_registration_gateway.dart';
 import '../../identityaccess/infrastructure/device/id_card_camera.dart';
 import '../../identityaccess/infrastructure/persistence/secure_profile_repository.dart';
 import '../../identityaccess/infrastructure/persistence/secure_session_repository.dart';
@@ -85,6 +88,7 @@ Future<void> configureDependencies({AppConfig? config}) async {
           CitizenReportDetailHandler(getIt(), getIt()),
           CitizenEvidenceHandler(getIt()),
           DeliveryRegistrationHandler(getIt(), getIt()),
+          BrigadeRegistrationHandler(getIt(), getIt(), getIt()),
         ],
       ),
     )
@@ -106,12 +110,22 @@ Future<void> configureDependencies({AppConfig? config}) async {
     ..registerLazySingleton<AuthenticationGateway>(
       () => HttpAuthenticationGateway(getIt()),
     )
-    ..registerLazySingleton<ProfileService>(() => ProfileService(getIt()))
+    ..registerLazySingleton<BrigadeRegistrationGateway>(
+      () => HttpBrigadeRegistrationGateway(getIt()),
+    )
+    ..registerLazySingleton<ProfileService>(
+      () => ProfileService(getIt(), outbox: getIt()),
+    )
     ..registerLazySingleton<AuthService>(
       () => AuthService(getIt(), getIt(), getIt()),
     )
+    ..registerLazySingleton<BrigadeRegistrationService>(
+      () => BrigadeRegistrationService(getIt(), getIt(), getIt(), getIt()),
+    )
     ..registerLazySingleton<IdCardCamera>(IdCardCamera.new)
-    ..registerSingleton<ProfileCubit>(ProfileCubit(getIt(), getIt()))
+    ..registerSingleton<ProfileCubit>(
+      ProfileCubit(getIt(), getIt(), registrations: getIt()),
+    )
     // Emergency Management
     ..registerLazySingleton<CitizenReportRepository>(
       () => SqliteCitizenReportRepository(database.db),
