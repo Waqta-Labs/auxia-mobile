@@ -19,10 +19,15 @@ import 'sos_widgets.dart';
     l10n.statusTransmitting,
     StatusTone.progress,
   ),
-  CitizenReportStatus.received => (l10n.statusReceived, StatusTone.info),
-  // The Urgency Score is internal to the authority (TS-C02): never shown.
+  // Received but not prioritized yet: still on its way (plan D2).
+  CitizenReportStatus.received => (
+    l10n.statusTransmitting,
+    StatusTone.progress,
+  ),
   CitizenReportStatus.prioritized => (
-    l10n.statusPrioritized,
+    report.score == null
+        ? l10n.statusPrioritizedNoScore
+        : l10n.statusPrioritized(report.score!.round().toString()),
     StatusTone.highlight,
   ),
   CitizenReportStatus.brigadeOnTheWay => (

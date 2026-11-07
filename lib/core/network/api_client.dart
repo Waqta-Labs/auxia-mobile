@@ -71,6 +71,13 @@ class ApiClient {
     required T Function(Object? data) parse,
   }) => _send(() => _dio.post<Object?>(path, data: form), parse);
 
+  /// Sends a `multipart/form-data` request with PUT (idempotent uploads).
+  Future<Either<Failure, T>> putMultipart<T>(
+    String path, {
+    required FormData form,
+    required T Function(Object? data) parse,
+  }) => _send(() => _dio.put<Object?>(path, data: form), parse);
+
   Future<Either<Failure, T>> _send<T>(
     Future<Response<Object?>> Function() request,
     T Function(Object? data) parse,

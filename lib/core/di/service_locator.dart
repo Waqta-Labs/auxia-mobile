@@ -81,8 +81,9 @@ Future<void> configureDependencies({AppConfig? config}) async {
         outbox: getIt(),
         connectivity: getIt(),
         handlers: <OutboxHandler>[
-          CitizenReportHandler(getIt(), getIt()),
+          CitizenReportHandler(getIt(), getIt(), getIt()),
           CitizenReportDetailHandler(getIt(), getIt()),
+          CitizenEvidenceHandler(getIt()),
           DeliveryRegistrationHandler(getIt(), getIt()),
         ],
       ),
