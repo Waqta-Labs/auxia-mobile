@@ -53,7 +53,8 @@ final class ValidationFailure extends Failure {
   List<Object?> get props => [...super.props, fieldErrors];
 }
 
-/// The server failed (HTTP 5xx). The operation can be retried later.
+/// The server failed (HTTP 5xx) or asked to slow down (HTTP 429). The
+/// operation can be retried later.
 final class ServerFailure extends Failure {
   const ServerFailure(super.message, {super.statusCode});
 }

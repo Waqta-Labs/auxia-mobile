@@ -124,7 +124,9 @@ class ApiClient {
             statusCode: status,
             fieldErrors: problem?.fieldErrors ?? const {},
           ),
-          >= 500 => ServerFailure(message, statusCode: status),
+          // A rate limit (429) is temporary, like a server error: the queued
+          // write must wait and retry, never be discarded.
+          429 || >= 500 => ServerFailure(message, statusCode: status),
           _ => UnexpectedFailure(message),
         };
     }
