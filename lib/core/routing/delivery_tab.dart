@@ -5,22 +5,27 @@ import '../../resourcemanagement/domain/model/mission.dart';
 import '../../traceability/domain/model/delivery.dart';
 
 /// Anti-corruption layer between Resource Management and Traceability: the
-/// delivery check receives its own [DeliveryOrder], never a [Mission].
-DeliveryOrder deliveryOrderFrom(Mission mission) => DeliveryOrder(
-  deliveryId: mission.id,
-  zoneName: mission.zoneName,
-  brigadeName: mission.brigadeName,
-  lines: [
-    for (final item in mission.items)
-      DeliveryLine(
-        resourceId: item.resourceId,
-        name: item.name.isEmpty ? item.resourceId.substring(0, 8) : item.name,
-        unit: item.unit,
-        planned: item.quantity,
-        delivered: item.quantity,
-      ),
-  ],
-);
+/// delivery check receives its own [DeliveryOrder], never a [Mission]. Only
+/// a mission whose delivery is open has one.
+DeliveryOrder? deliveryOrderFrom(Mission mission) {
+  final deliveryId = mission.deliveryId;
+  if (deliveryId == null) return null;
+  return DeliveryOrder(
+    deliveryId: deliveryId,
+    zoneName: mission.zoneName,
+    brigadeName: mission.brigadeName,
+    lines: [
+      for (final item in mission.items)
+        DeliveryLine(
+          resourceId: item.resourceId,
+          name: item.name.isEmpty ? item.resourceId.substring(0, 8) : item.name,
+          unit: item.unit,
+          planned: item.quantity,
+          delivered: item.quantity,
+        ),
+    ],
+  );
+}
 
 /// Delivery to check: the mission named in the route, else the one the
 /// brigadist is navigating to.

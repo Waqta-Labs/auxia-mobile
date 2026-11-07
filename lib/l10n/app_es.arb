@@ -397,14 +397,6 @@
       }
     }
   },
-  "missionApprovedAgo": "Plan aprobado {ago}",
-  "@missionApprovedAgo": {
-    "placeholders": {
-      "ago": {
-        "type": "String"
-      }
-    }
-  },
   "priorityLow": "Prioridad baja",
   "priorityMedium": "Prioridad media",
   "priorityHigh": "Prioridad alta",
@@ -433,8 +425,21 @@
   "actionOpenNavigation": "Abrir navegación",
   "missionNavigating": "Navegación en curso",
   "missionCompleted": "Misión completada",
-  "chooseBrigadeTitle": "Elige tu brigada",
-  "chooseBrigadeBody": "No encontramos tu nombre en una sola brigada de tu organización. Elige la tuya; lo recordaremos en este dispositivo.",
+  "missionsNoBrigadeTitle": "Tu cuenta aún no está en una brigada",
+  "missionsNoBrigadeDetail": "Pide al administrador de tu organización que te agregue como integrante de tu brigada. Tus misiones aparecerán aquí.",
+  "missionDeliveryPending": "La entrega se habilitará cuando el Centro de Mando la abra.",
+  "reasonDamage": "Daño en la zona",
+  "missionCategoryAgo": "{category} · {ago}",
+  "@missionCategoryAgo": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
   "missionsRefreshError": "No pudimos actualizar las misiones. Mostramos las guardadas en tu dispositivo.",
   "mapRecenter": "Centrar mapa",
   "mapMyLocation": "Tu ubicación",

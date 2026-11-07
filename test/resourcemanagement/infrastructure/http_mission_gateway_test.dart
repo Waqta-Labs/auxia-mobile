@@ -1,3 +1,4 @@
+import 'package:auxia_mobile/core/failure.dart';
 import 'package:auxia_mobile/resourcemanagement/domain/model/mission.dart';
 import 'package:auxia_mobile/resourcemanagement/infrastructure/api/http_mission_gateway.dart';
 import 'package:auxia_mobile/shared/domain/geo_point.dart';
@@ -5,183 +6,132 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/test_app.dart';
 
-const _brigade = BrigadeSummary(
-  id: 'b1',
-  name: 'Brigada Alfa',
-  memberNames: ['Cap. M. Quispe'],
-  distributionPlanId: 'p1',
-);
-
-Map<String, (int, Object?)> _routes({bool withScore = true}) => {
-  'GET /api/v1/brigades': (
-    200,
-    [
-      {
-        'id': 'b1',
-        'name': 'Brigada Alfa',
-        'status': 'ASSIGNED',
-        'members': [
-          {'id': 'm1', 'fullName': 'Cap. M. Quispe', 'role': 'LEADER'},
-        ],
-        'currentAssignment': {'distributionPlanId': 'p1', 'brigadeId': 'b1'},
-      },
-      {'id': 'b2', 'name': 'Brigada Beta', 'members': <Object?>[]},
-    ],
-  ),
-  'GET /api/v1/distribution-plans/p1': (
-    200,
+/// Example of the contract in PLAN_BACK_MOBILE.md, iteration 2.
+const _missions = {
+  'brigadeId': 'b1',
+  'brigadeName': 'Brigada Alfa',
+  'missions': [
     {
-      'id': 'p1',
+      'deliveryId': 'd1',
+      'planId': 'p1',
       'zoneId': 'z1',
-      'status': 'APPROVED',
-      'items': [
-        {'resourceId': 'r1', 'recommendedQuantity': 15, 'quantity': 12},
-      ],
-      'decision': {'decidedBy': 'u', 'decidedAt': '2026-11-06T10:00:00'},
-    },
-  ),
-  'GET /api/v1/zones/z1': (
-    200,
-    {
-      'id': 'z1',
-      'name': 'Sector Santa Rosa',
-      'geolocation': {'latitude': -12.0432, 'longitude': -77.0428},
-      'damageLevel': 'SEVERE',
-      'score': 93.6,
+      'zoneName': 'Sector Santa Rosa',
+      'status': 'ASSIGNED',
+      'category': 'MEDICAL',
+      'assignedAt': '2026-11-06T09:30:00',
+      'completedAt': null,
+      'score': 94.0,
       'priorityLevel': 'CRITICAL',
-      'populationImpact': {
-        'peopleAffected': 120,
+      'reasons': [
+        {'feature': 'needs', 'contribution': 7.5},
+        {'feature': 'damageLevel', 'contribution': 40.0},
+      ],
+      'people': {
+        'peopleAffected': 300,
         'children': 3,
-        'elderlyPeople': 1,
-        'disabledPeople': 0,
+        'elderly': 1,
+        'disabled': 0,
       },
-    },
-  ),
-  if (withScore)
-    'GET /api/v1/zones/z1/score': (
-      200,
-      {
-        'available': true,
-        'score': 93.6,
-        'priorityLevel': 'CRITICAL',
-        'topFeatures': [
-          {'feature': 'vulnerablePopulation', 'contribution': 12.5},
-          {'feature': 'damageLevel', 'contribution': 30.0},
-        ],
-      },
-    ),
-  'GET /api/v1/deliveries': (
-    200,
-    [
-      {
-        'id': 'd-old',
-        'distributionPlanId': 'p0',
-        'brigadeId': 'b1',
-        'status': 'CERTIFIED',
-      },
-      {
-        'id': 'd1',
-        'distributionPlanId': 'p1',
-        'brigadeId': 'b1',
-        'status': 'INITIATED',
-      },
-    ],
-  ),
-  'GET /api/v1/inventories': (
-    200,
-    {
-      'id': 'i1',
-      'stockItems': [
-        {'resourceId': 'r1', 'name': 'Kit de víveres', 'unit': 'KIT'},
+      'location': {'latitude': -12.0432, 'longitude': -77.0428},
+      'distanceKm': 3.2,
+      'etaMinutes': 7,
+      'items': [
+        {
+          'resourceId': 'r1',
+          'name': 'Agua 2.5 L',
+          'unit': 'UNIT',
+          'quantity': 300,
+        },
       ],
     },
-  ),
+    {
+      'deliveryId': 'd0',
+      'planId': 'p0',
+      'zoneId': 'z0',
+      'zoneName': 'Villa Esperanza',
+      'status': 'COMPLETED',
+      'category': 'SUPPLIES',
+      'assignedAt': '2026-11-05T08:00:00',
+      'completedAt': '2026-11-05T12:00:00',
+    },
+  ],
 };
 
 void main() {
-  test('lists the brigades with their members and assignment', () async {
-    final gateway = HttpMissionGateway(
-      fakeApiClient(FakeHttpAdapter(_routes())),
-    );
+  test('reads the missions of the brigade of the session', () async {
+    final adapter = FakeHttpAdapter({
+      'GET /api/v1/me/missions': (200, _missions),
+    });
 
-    final brigades = (await gateway.brigades()).getRight().toNullable()!;
+    final result = await HttpMissionGateway(
+      fakeApiClient(adapter, token: 't'),
+    ).myMissions();
 
-    expect(brigades.first, _brigade);
-    expect(brigades.last.distributionPlanId, isNull);
+    final mine = result.getRight().toNullable()!;
+    expect(mine.brigadeName, 'Brigada Alfa');
+    expect(mine.missions, hasLength(2));
+    final current = mine.missions.first;
+    expect(current.id, 'p1');
+    expect(current.deliveryId, 'd1');
+    expect(current.category, MissionCategory.medical);
+    expect(current.status, MissionStatus.assigned);
+    expect(current.priority, PriorityLevel.critical);
+    expect(current.score, 94);
+    expect(current.reasons.first.feature, ScoreFeature.damageLevel);
+    expect(current.people.children, 3);
+    expect(current.location, const GeoPoint(-12.0432, -77.0428));
+    expect(current.baseDistanceKm, 3.2);
+    expect(current.baseEtaMinutes, 7);
+    expect(current.items.single.name, 'Agua 2.5 L');
+    expect(current.assignedAt, DateTime.utc(2026, 11, 6, 9, 30));
+    final done = mine.missions.last;
+    expect(done.status, MissionStatus.completed);
+    expect(done.category, MissionCategory.supplies);
+    expect(done.completedAt, DateTime.utc(2026, 11, 5, 12));
   });
 
-  test('builds the mission from plan, zone, score and delivery', () async {
-    final adapter = FakeHttpAdapter(_routes());
-    final gateway = HttpMissionGateway(fakeApiClient(adapter));
+  test('an account without brigade gets no missions', () async {
+    final adapter = FakeHttpAdapter({
+      'GET /api/v1/me/missions': (
+        200,
+        {'brigadeId': null, 'brigadeName': null, 'missions': <Object?>[]},
+      ),
+    });
 
-    final mission = (await gateway.missionFor(
-      _brigade,
-    )).getRight().toNullable()!;
+    final result = await HttpMissionGateway(
+      fakeApiClient(adapter, token: 't'),
+    ).myMissions();
 
-    expect(mission.id, 'd1');
-    expect(mission.zoneName, 'Sector Santa Rosa');
-    expect(mission.location, const GeoPoint(-12.0432, -77.0428));
-    expect(mission.score, 93.6);
-    expect(mission.priority, PriorityLevel.critical);
-    expect(mission.damage, DamageLevel.severe);
-    expect(mission.status, MissionStatus.assigned);
-    expect(mission.people.children, 3);
-    expect(
-      mission.reasons.first,
-      const ScoreReason(ScoreFeature.damageLevel, 30),
-    );
-    expect(mission.items.single.name, 'Kit de víveres');
-    expect(mission.items.single.quantity, 12);
-    expect(mission.assignedAt, DateTime.utc(2026, 11, 6, 10));
-    final deliveriesRequest = adapter.requests.firstWhere(
-      (r) => r.uri.path == '/api/v1/deliveries',
-    );
-    expect(deliveriesRequest.uri.queryParameters, {'zoneId': 'z1'});
+    final mine = result.getRight().toNullable()!;
+    expect(mine.hasBrigade, isFalse);
+    expect(mine.missions, isEmpty);
   });
 
-  test('the mission works without the score explanation', () async {
-    final gateway = HttpMissionGateway(
-      fakeApiClient(FakeHttpAdapter(_routes(withScore: false))),
+  test('a mission whose delivery is not open cannot be registered', () {
+    final mission = missionFromJson(
+      {
+        'planId': 'p1',
+        'zoneId': 'z1',
+        'zoneName': 'Z',
+        'status': 'ASSIGNED',
+        'deliveryId': null,
+      },
+      brigadeId: 'b1',
+      brigadeName: 'B',
     );
 
-    final mission = (await gateway.missionFor(
-      _brigade,
-    )).getRight().toNullable()!;
-
-    expect(mission.reasons, isEmpty);
-    expect(mission.score, 93.6);
+    expect(mission.canRegisterDelivery, isFalse);
   });
 
-  test('a brigade without assignment has no mission', () async {
-    final gateway = HttpMissionGateway(
-      fakeApiClient(FakeHttpAdapter(_routes())),
-    );
+  test('another role is forbidden', () async {
+    final adapter = FakeHttpAdapter({
+      'GET /api/v1/me/missions': (403, {'detail': 'Forbidden'}),
+    });
 
-    final mission = await gateway.missionFor(
-      const BrigadeSummary(id: 'b2', name: 'Beta', memberNames: []),
-    );
+    final result = await HttpMissionGateway(
+      fakeApiClient(adapter, token: 't'),
+    ).myMissions();
 
-    expect(mission.getRight().toNullable(), isNull);
-  });
-
-  test('names are matched without accents or case', () {
-    const brigade = BrigadeSummary(
-      id: 'b',
-      name: 'B',
-      memberNames: ['María  Quispe'],
-    );
-
-    expect(brigade.hasMember('maria quispe'), isTrue);
-    expect(brigade.hasMember('Mario Quispe'), isFalse);
-  });
-
-  test('distance and time are estimated from the GPS', () {
-    const here = GeoPoint(-12.0464, -77.0428);
-    const there = GeoPoint(-12.0176, -77.0428);
-
-    final km = here.distanceKmTo(there);
-
-    expect(km, closeTo(3.2, 0.05));
-    expect(estimatedMinutes(km), 12);
+    expect(result.getLeft().toNullable(), isA<ForbiddenFailure>());
   });
 }

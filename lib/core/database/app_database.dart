@@ -85,6 +85,11 @@ class AppDatabase {
       )
       ''',
     ],
+    // Version 5: missions keep the order of /me/missions (A_07, plan D4).
+    [
+      'ALTER TABLE missions ADD COLUMN position INTEGER NOT NULL DEFAULT 0',
+      "DELETE FROM key_values WHERE key = 'missions.myBrigadeId'",
+    ],
   ];
 
   static int get version => migrations.length;

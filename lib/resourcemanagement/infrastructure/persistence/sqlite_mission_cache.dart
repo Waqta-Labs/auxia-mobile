@@ -11,17 +11,16 @@ import '../../domain/repositories/mission_ports.dart';
 class SqliteMissionCache implements MissionCache {
   SqliteMissionCache(this._db);
 
-  static const String _brigadeKey = 'missions.myBrigadeId';
+  static const String _brigadeKey = 'missions.brigadeName';
   static const String _refreshKey = 'missions.lastRefresh';
 
   final Database _db;
 
   @override
-  Future<String?> myBrigadeId() => _value(_brigadeKey);
+  Future<String?> brigadeName() => _value(_brigadeKey);
 
   @override
-  Future<void> saveMyBrigadeId(String? brigadeId) =>
-      _setValue(_brigadeKey, brigadeId);
+  Future<void> saveBrigadeName(String? name) => _setValue(_brigadeKey, name);
 
   @override
   Future<DateTime?> lastRefresh() async {
@@ -35,7 +34,7 @@ class SqliteMissionCache implements MissionCache {
 
   @override
   Future<List<Mission>> missions() async {
-    final rows = await _db.query('missions', orderBy: 'updated_at DESC');
+    final rows = await _db.query('missions', orderBy: 'position, updated_at');
     return [
       for (final row in rows)
         missionFromCache(
@@ -45,11 +44,37 @@ class SqliteMissionCache implements MissionCache {
   }
 
   @override
-  Future<void> saveMission(Mission mission) => _db.insert('missions', {
+  Future<void> replaceMissions(List<Mission> missions) =>
+      _db.transaction((txn) async {
+        await txn.delete('missions');
+        for (final (index, mission) in missions.indexed) {
+          await txn.insert('missions', _row(mission, index));
+        }
+      });
+
+  /// Updates one mission in place, keeping its position in the list.
+  @override
+  Future<void> saveMission(Mission mission) async {
+    final rows = await _db.query(
+      'missions',
+      columns: ['position'],
+      where: 'id = ?',
+      whereArgs: [mission.id],
+    );
+    final position = rows.isEmpty ? 0 : rows.first['position']! as int;
+    await _db.insert(
+      'missions',
+      _row(mission, position),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  static Map<String, Object?> _row(Mission mission, int position) => {
     'id': mission.id,
     'json': jsonEncode(missionToCache(mission)),
+    'position': position,
     'updated_at': DateTime.now().millisecondsSinceEpoch,
-  }, conflictAlgorithm: ConflictAlgorithm.replace);
+  };
 
   Future<String?> _value(String key) async {
     final rows = await _db.query(
@@ -74,6 +99,8 @@ class SqliteMissionCache implements MissionCache {
 
 Map<String, Object?> missionToCache(Mission mission) => {
   'id': mission.id,
+  'deliveryId': mission.deliveryId,
+  'category': mission.category.code,
   'brigadeId': mission.brigadeId,
   'brigadeName': mission.brigadeName,
   'planId': mission.planId,
@@ -104,14 +131,20 @@ Map<String, Object?> missionToCache(Mission mission) => {
       },
   ],
   'assignedAt': mission.assignedAt?.toIso8601String(),
+  'completedAt': mission.completedAt?.toIso8601String(),
+  'baseDistanceKm': mission.baseDistanceKm,
+  'baseEtaMinutes': mission.baseEtaMinutes,
 };
 
 Mission missionFromCache(Map<String, Object?> json) {
   final people = json['people']! as Map<String, Object?>;
   final damage = json['damage'] as String?;
   final assignedAt = json['assignedAt'] as String?;
+  final completedAt = json['completedAt'] as String?;
   return Mission(
     id: json['id']! as String,
+    deliveryId: json['deliveryId'] as String?,
+    category: MissionCategory.fromCode(json['category'] as String?),
     brigadeId: json['brigadeId']! as String,
     brigadeName: json['brigadeName']! as String,
     planId: json['planId']! as String,
@@ -147,5 +180,8 @@ Mission missionFromCache(Map<String, Object?> json) {
         ),
     ],
     assignedAt: assignedAt == null ? null : DateTime.parse(assignedAt),
+    completedAt: completedAt == null ? null : DateTime.parse(completedAt),
+    baseDistanceKm: (json['baseDistanceKm'] as num?)?.toDouble(),
+    baseEtaMinutes: (json['baseEtaMinutes'] as num?)?.toInt(),
   );
 }

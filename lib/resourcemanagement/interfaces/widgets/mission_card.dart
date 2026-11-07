@@ -23,7 +23,7 @@ String priorityExplanation(AppLocalizations l10n, Mission mission) {
         DamageLevel.moderate => l10n.damageModerate,
         DamageLevel.severe => l10n.damageSevere,
         DamageLevel.critical => l10n.damageCritical,
-        null => null,
+        null => l10n.reasonDamage,
       },
       ScoreFeature.peopleAffected =>
         mission.people.peopleAffected > 0
@@ -56,6 +56,12 @@ String priorityLabel(AppLocalizations l10n, PriorityLevel level) =>
       PriorityLevel.critical => l10n.priorityCritical,
     };
 
+String categoryLabel(AppLocalizations l10n, MissionCategory category) =>
+    switch (category) {
+      MissionCategory.medical => l10n.categoryMedical,
+      MissionCategory.supplies => l10n.categorySupplies,
+    };
+
 String unitLabel(AppLocalizations l10n, String? unit) => switch (unit) {
   'KG' => l10n.unitKg,
   'LITER' => l10n.unitLiter,
@@ -86,9 +92,17 @@ class MissionCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final muted = textTheme.bodySmall?.copyWith(color: AppColors.textSecondary);
     final location = mission.location;
-    final distance = location != null && myLocation != null
+    // Live GPS when there is a fix; otherwise the distance from the base of
+    // the brigade computed by the backend (plan D1, same 30 km/h).
+    final liveKm = location != null && myLocation != null
         ? myLocation!.distanceKmTo(location)
         : null;
+    final distance = liveKm ?? mission.baseDistanceKm;
+    final minutes = liveKm != null
+        ? estimatedMinutes(liveKm)
+        : mission.baseEtaMinutes ??
+              (distance == null ? null : estimatedMinutes(distance));
+    final category = categoryLabel(l10n, mission.category);
     final people = mission.people;
 
     return AppCard(
@@ -117,15 +131,23 @@ class MissionCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(mission.zoneName, style: textTheme.titleLarge),
-                    if (mission.assignedAt != null)
-                      Text(
-                        l10n.missionApprovedAgo(
-                          timeAgo(l10n, mission.assignedAt!, now),
-                        ),
-                        style: muted,
-                      ),
+                    Text(
+                      mission.assignedAt == null
+                          ? category
+                          : l10n.missionCategoryAgo(
+                              category,
+                              timeAgo(l10n, mission.assignedAt!, now),
+                            ),
+                      style: muted,
+                    ),
                   ],
                 ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              StatusChip(
+                label: category,
+                tone: StatusTone.info,
+                showDot: false,
               ),
             ],
           ),
@@ -210,12 +232,9 @@ class MissionCard extends StatelessWidget {
             spacing: AppSpacing.sm,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              if (distance != null)
+              if (distance != null && minutes != null)
                 Text(
-                  l10n.missionDistance(
-                    distance.toStringAsFixed(1),
-                    estimatedMinutes(distance),
-                  ),
+                  l10n.missionDistance(distance.toStringAsFixed(1), minutes),
                   style: textTheme.titleSmall?.copyWith(
                     color: AppColors.skyBlue,
                   ),
@@ -227,10 +246,13 @@ class MissionCard extends StatelessWidget {
           if (mission.isOpen) ...[
             const SizedBox(height: AppSpacing.md),
             if (mission.status == MissionStatus.navigating) ...[
-              FilledButton(
-                onPressed: onVerifyDelivery,
-                child: Text(l10n.actionVerifyDelivery),
-              ),
+              if (mission.canRegisterDelivery)
+                FilledButton(
+                  onPressed: onVerifyDelivery,
+                  child: Text(l10n.actionVerifyDelivery),
+                )
+              else
+                Text(l10n.missionDeliveryPending, style: muted),
               const SizedBox(height: AppSpacing.xs),
               OutlinedButton(
                 onPressed: onStartNavigation,
