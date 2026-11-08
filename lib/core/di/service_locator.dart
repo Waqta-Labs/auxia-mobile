@@ -133,7 +133,7 @@ Future<void> configureDependencies({AppConfig? config}) async {
     )
     ..registerLazySingleton<SosService>(() => SosService(getIt(), getIt()))
     ..registerLazySingleton<MyReportsService>(
-      () => MyReportsService(getIt(), getIt()),
+      () => MyReportsService(getIt(), getIt(), outbox: getIt()),
     )
     ..registerLazySingleton<QuickEvidence>(DeviceQuickEvidence.new)
     // Resource Management

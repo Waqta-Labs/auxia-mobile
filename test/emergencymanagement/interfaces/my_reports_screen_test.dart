@@ -1,3 +1,4 @@
+import 'package:auxia_mobile/core/sync/outbox_repository.dart';
 import 'package:auxia_mobile/core/sync/sync_cubit.dart';
 import 'package:auxia_mobile/emergencymanagement/application/citizen_report_sync.dart';
 import 'package:auxia_mobile/emergencymanagement/domain/model/citizen_report.dart';
@@ -44,7 +45,11 @@ void main() {
     tester.view.physicalSize = const Size(1170, 4000);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
-    final service = MyReportsService(reports, FakeCitizenReportGateway());
+    final service = MyReportsService(
+      reports,
+      FakeCitizenReportGateway(),
+      outbox: OutboxRepository(db),
+    );
     await tester.pumpWidget(
       MultiBlocProvider(
         providers: [
@@ -56,6 +61,29 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  testWidgets('a report that could not be sent says it is retrying', (
+    tester,
+  ) async {
+    await reports.save(
+      report('SR-0003', HelpCategory.medical, CitizenReportStatus.saved),
+    );
+    final outbox = OutboxRepository(db);
+    await outbox.enqueue(
+      type: 'citizen_report',
+      payload: const {'reportId': 'SR-0003'},
+      id: 'SR-0003',
+    );
+    await outbox.reschedule(
+      'SR-0003',
+      attempts: 2,
+      nextAttemptAt: DateTime.now().add(const Duration(seconds: 10)),
+      error: 'No connection',
+    );
+    await pump(tester);
+
+    expect(find.text('Reintento de envío · intento 2'), findsOneWidget);
+  });
 
   testWidgets('shows each report with its step and label', (tester) async {
     await reports.save(

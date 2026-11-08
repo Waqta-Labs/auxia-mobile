@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:equatable/equatable.dart';
 import 'package:fpdart/fpdart.dart';
 
 import '../../core/failure.dart';
@@ -96,14 +98,51 @@ class CitizenReportDetailHandler implements OutboxHandler {
 
 /// Use cases of Mis reportes (A_05).
 class MyReportsService {
-  MyReportsService(this._reports, this._gateway);
+  MyReportsService(this._reports, this._gateway, {this._outbox});
 
   final CitizenReportRepository _reports;
   final CitizenReportGateway _gateway;
+  final OutboxRepository? _outbox;
 
   Future<List<CitizenReport>> reports() => _reports.all();
 
-  Stream<void> get changes => _reports.changes;
+  /// Fires when a report or its place in the queue changes.
+  Stream<void> get changes {
+    final outbox = _outbox;
+    if (outbox == null) return _reports.changes;
+    final subscriptions = <StreamSubscription<void>>[];
+    late final StreamController<void> merged;
+    merged = StreamController<void>(
+      onListen: () => subscriptions
+        ..add(_reports.changes.listen(merged.add))
+        ..add(outbox.changes.listen(merged.add)),
+      onCancel: () async {
+        for (final subscription in subscriptions) {
+          await subscription.cancel();
+        }
+      },
+    );
+    return merged.stream;
+  }
+
+  /// Saved reports that already failed to leave the device (A_05 "Reintento
+  /// de envío"), by report id: still retrying, or refused for good.
+  Future<Map<String, SendIssue>> sendIssues(List<CitizenReport> reports) async {
+    final outbox = _outbox;
+    if (outbox == null) return const {};
+    final issues = <String, SendIssue>{};
+    for (final report in reports) {
+      if (report.status != CitizenReportStatus.saved) continue;
+      final item = await outbox.find(report.id);
+      if (item == null) continue;
+      if (item.status == OutboxStatus.rejected) {
+        issues[report.id] = const SendIssue.failed();
+      } else if (item.attempts > 0) {
+        issues[report.id] = SendIssue.retrying(item.attempts);
+      }
+    }
+    return issues;
+  }
 
   /// Asks the backend how far each sent report got: prioritized by the AI
   /// (with its Urgency Score) or with a brigade on the way (with its ETA when
@@ -134,4 +173,19 @@ class MyReportsService {
       }
     }
   }
+}
+
+/// A saved report that could not be sent yet.
+final class SendIssue extends Equatable {
+  /// It failed [attempts] times and the queue keeps trying.
+  const SendIssue.retrying(this.attempts) : failed = false;
+
+  /// The backend refused it: it will not be sent.
+  const SendIssue.failed() : attempts = 0, failed = true;
+
+  final int attempts;
+  final bool failed;
+
+  @override
+  List<Object> get props => [attempts, failed];
 }

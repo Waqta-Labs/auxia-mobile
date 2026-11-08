@@ -65,6 +65,7 @@ class MyReportsScreen extends StatelessWidget {
                       ReportCard(
                         report: report,
                         now: now,
+                        issue: state.issues[report.id],
                         onTap: () => showModalBottomSheet<void>(
                           context: context,
                           builder: (_) => ReportDetailSheet(report: report),

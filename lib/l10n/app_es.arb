@@ -286,6 +286,19 @@
     }
   },
   "statusSaved": "Guardado en dispositivo",
+  "statusRetrying": "Reintento de envío · intento {attempts}",
+  "@statusRetrying": {
+    "description": "A_05: a saved report whose sending failed and is retried (6.4.4).",
+    "placeholders": {
+      "attempts": {
+        "type": "int"
+      }
+    }
+  },
+  "statusSendFailed": "No se pudo enviar",
+  "@statusSendFailed": {
+    "description": "A_05: the backend refused the report."
+  },
   "statusTransmitting": "Transmitiendo…",
   "statusPrioritized": "Priorizado por IA · {score}",
   "@statusPrioritized": {
