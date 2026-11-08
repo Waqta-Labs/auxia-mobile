@@ -265,6 +265,25 @@
       }
     }
   },
+  "channelSatelliteUnavailable": "Satélite · no disponible en este dispositivo",
+  "@channelSatelliteUnavailable": {
+    "description": "A phone does not let an app send by satellite (plan D5)."
+  },
+  "channelMeshUnsupported": "Mesh · solo en Android",
+  "channelMeshOff": "Mesh · desactivado",
+  "channelMeshSearching": "Mesh · buscando teléfonos",
+  "channelMeshPeers": "{count, plural, =1{Mesh · 1 teléfono cerca} other{Mesh · {count} teléfonos cerca}}",
+  "@channelMeshPeers": {
+    "description": "Nearby phones with AuxIA connected by Mesh (plan D5).",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "meshSwitch": "Compartir SOS por Mesh",
+  "meshSwitchDetail": "Sin señal, los SOS pasan por Bluetooth a teléfonos cercanos con AuxIA hasta que uno con señal los envía.",
+  "meshPermissionDenied": "Para usar Mesh, permite Bluetooth y dispositivos cercanos en los ajustes del teléfono.",
   "channelsTitle": "Canales de comunicación",
   "@channelsTitle": {
     "description": "A_06 / A_09: section of the sync channels (6.4.4)."

@@ -6,6 +6,7 @@ import '../../../../core/maps/map_region.dart';
 import '../../../../core/sync/sync_cubit.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../emergencymanagement/interfaces/mesh_cubit.dart';
 import '../../../../identityaccess/domain/model/user_role.dart';
 import '../../../../identityaccess/interfaces/profile_cubit.dart';
 import '../../../../identityaccess/interfaces/widgets/profile_summary_card.dart';
@@ -353,6 +354,9 @@ class _ChannelsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final textTheme = Theme.of(context).textTheme;
+    final mesh = context.watch<MeshCubit>().state;
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -360,11 +364,40 @@ class _ChannelsCard extends StatelessWidget {
           const SyncChannels(),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            AppLocalizations.of(context).channelsHint,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+            l10n.channelsHint,
+            style: textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
+          if (mesh.supported) ...[
+            const SizedBox(height: AppSpacing.xs),
+            // Plan D5: the user turns Mesh on; it asks for Bluetooth.
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: mesh.enabled,
+              title: Text(l10n.meshSwitch, style: textTheme.titleSmall),
+              subtitle: Text(
+                mesh.permissionDenied
+                    ? l10n.meshPermissionDenied
+                    : l10n.meshSwitchDetail,
+                style: textTheme.bodySmall?.copyWith(
+                  color: mesh.permissionDenied
+                      ? AppColors.coral
+                      : AppColors.textSecondary,
+                ),
+              ),
+              onChanged: (on) async {
+                final messenger = ScaffoldMessenger.of(context);
+                final cubit = context.read<MeshCubit>();
+                await cubit.setEnabled(on);
+                if (cubit.state.enabled == on) {
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(l10n.settingsSaved)),
+                  );
+                }
+              },
+            ),
+          ],
         ],
       ),
     );

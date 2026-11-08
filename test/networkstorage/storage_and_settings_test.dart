@@ -1,12 +1,16 @@
+import 'dart:async';
+
 import 'package:auxia_mobile/core/database/app_database.dart';
 import 'package:auxia_mobile/core/localization/locale_cubit.dart';
 import 'package:auxia_mobile/core/localization/locale_store.dart';
 import 'package:auxia_mobile/core/maps/map_region.dart';
 import 'package:auxia_mobile/core/sync/outbox_repository.dart';
 import 'package:auxia_mobile/core/sync/sync_cubit.dart';
+import 'package:auxia_mobile/emergencymanagement/application/mesh_service.dart';
 import 'package:auxia_mobile/emergencymanagement/application/sos_service.dart';
 import 'package:auxia_mobile/emergencymanagement/domain/model/citizen_report.dart';
 import 'package:auxia_mobile/emergencymanagement/infrastructure/persistence/sqlite_citizen_report_repository.dart';
+import 'package:auxia_mobile/emergencymanagement/interfaces/mesh_cubit.dart';
 import 'package:auxia_mobile/identityaccess/application/auth_service.dart';
 import 'package:auxia_mobile/identityaccess/application/profile_service.dart';
 import 'package:auxia_mobile/identityaccess/domain/model/local_profile.dart';
@@ -81,7 +85,11 @@ void main() {
   group('NetworkStorageScreen (A_06 / A_09)', () {
     late LocaleCubit localeCubit;
 
-    Future<void> pump(WidgetTester tester, UserRole role) async {
+    Future<void> pump(
+      WidgetTester tester,
+      UserRole role, {
+      MeshCubit? mesh,
+    }) async {
       tester.view.physicalSize = const Size(1170, 6000);
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
@@ -108,6 +116,7 @@ void main() {
           providers: [
             BlocProvider.value(value: profileCubit),
             BlocProvider.value(value: localeCubit),
+            BlocProvider(create: (_) => mesh ?? MeshCubit.off()),
             BlocProvider(create: (_) => SyncCubit(FakeSyncController())),
             BlocProvider(
               create: (_) => NetworkStorageCubit(
@@ -147,8 +156,11 @@ void main() {
       );
       expect(find.text('Descargar'), findsNothing);
       expect(find.text('CANALES DE COMUNICACIÓN'), findsOneWidget);
-      expect(find.text('Mesh · no disponible'), findsOneWidget);
-      expect(find.text('Satélite · no disponible'), findsOneWidget);
+      expect(find.text('Mesh · desactivado'), findsOneWidget);
+      expect(
+        find.text('Satélite · no disponible en este dispositivo'),
+        findsOneWidget,
+      );
       expect(find.text('BASE DE DATOS LOCAL · SQLITE'), findsOneWidget);
       expect(find.text('Reportes locales'), findsOneWidget);
       expect(find.text('Cifrada · OK'), findsOneWidget);
@@ -176,5 +188,38 @@ void main() {
       expect(find.text('Network and storage'), findsOneWidget);
       expect(find.text('Settings saved'), findsOneWidget);
     });
+
+    testWidgets('Mesh is turned on from the settings', (tester) async {
+      final controller = _MeshController();
+      await pump(tester, UserRole.citizen, mesh: MeshCubit(controller));
+      expect(find.text('Mesh · desactivado'), findsOneWidget);
+
+      await tester.tap(find.text('Compartir SOS por Mesh'));
+      await tester.pumpAndSettle();
+
+      expect(controller.turnedOn, isTrue);
+      expect(find.text('Mesh · 2 teléfonos cerca'), findsOneWidget);
+      expect(find.text('Configuración guardada'), findsOneWidget);
+    });
   });
+}
+
+/// Mesh that finds two phones as soon as it is turned on.
+class _MeshController implements MeshController {
+  final StreamController<MeshState> _states = StreamController.broadcast();
+  MeshState _state = const MeshState();
+  bool turnedOn = false;
+
+  @override
+  MeshState get state => _state;
+
+  @override
+  Stream<MeshState> get states => _states.stream;
+
+  @override
+  Future<void> setEnabled(bool enabled) async {
+    turnedOn = enabled;
+    _state = MeshState(enabled: enabled, peers: enabled ? 2 : 0);
+    _states.add(_state);
+  }
 }

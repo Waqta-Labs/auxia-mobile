@@ -5,11 +5,13 @@ import '../../../core/connectivity/connectivity_monitor.dart';
 import '../../../core/sync/sync_cubit.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../emergencymanagement/application/mesh_service.dart';
+import '../../../emergencymanagement/interfaces/mesh_cubit.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
-/// Channels the app can use to sync (A_05, A_06, A_09). The device detects
-/// cellular and Wi-Fi; Mesh and Satellite are shown as unavailable on this
-/// device (TS-C08, see the project guide).
+/// Channels the app can use to sync (A_05, A_06, A_09): cellular and Wi-Fi
+/// as the device detects them, Mesh as the user left it (plan D5), and
+/// satellite, which a phone does not let an app use.
 class SyncChannels extends StatelessWidget {
   const SyncChannels({super.key});
 
@@ -19,36 +21,50 @@ class SyncChannels extends StatelessWidget {
     final channels = context.select(
       (SyncCubit cubit) => cubit.state.network.channels,
     );
+    final mesh = context.watch<MeshCubit>().state;
     return Wrap(
       spacing: AppSpacing.xs,
       runSpacing: AppSpacing.xs,
       children: [
-        _ChannelChip(
-          name: l10n.channelCellular,
-          available: channels.contains(NetworkChannel.cellular),
-        ),
+        channels.contains(NetworkChannel.cellular)
+            ? _ChannelChip.available(l10n.channelCellular)
+            : _ChannelChip.unavailable(
+                l10n.channelUnavailable(l10n.channelCellular),
+              ),
         if (channels.contains(NetworkChannel.wifi))
-          _ChannelChip(name: l10n.channelWifi, available: true),
-        _ChannelChip(name: l10n.channelMesh, available: false),
-        _ChannelChip(name: l10n.channelSatellite, available: false),
+          _ChannelChip.available(l10n.channelWifi),
+        _meshChip(l10n, mesh),
+        _ChannelChip.unavailable(l10n.channelSatelliteUnavailable),
       ],
     );
   }
+
+  static _ChannelChip _meshChip(AppLocalizations l10n, MeshState mesh) {
+    if (!mesh.supported) {
+      return _ChannelChip.unavailable(l10n.channelMeshUnsupported);
+    }
+    if (!mesh.enabled) return _ChannelChip.unavailable(l10n.channelMeshOff);
+    if (mesh.peers == 0) {
+      return _ChannelChip(l10n.channelMeshSearching, AppColors.skyBlue);
+    }
+    return _ChannelChip.available(l10n.channelMeshPeers(mesh.peers));
+  }
 }
 
-/// Channel pill: dark background, emerald dot when the channel can sync, and
-/// coral dot with "no disponible" written when it cannot (color is never the
-/// only signal).
+/// Channel pill: dark background and a colored dot, with the state always
+/// written (color is never the only signal).
 class _ChannelChip extends StatelessWidget {
-  const _ChannelChip({required this.name, required this.available});
+  const _ChannelChip(this.label, this.dot);
 
-  final String name;
-  final bool available;
+  const _ChannelChip.available(String label) : this(label, AppColors.emerald);
+
+  const _ChannelChip.unavailable(String label) : this(label, AppColors.coral);
+
+  final String label;
+  final Color dot;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final label = available ? name : l10n.channelUnavailable(name);
     return Semantics(
       container: true,
       label: label,
@@ -68,10 +84,7 @@ class _ChannelChip extends StatelessWidget {
             Container(
               width: 8,
               height: 8,
-              decoration: BoxDecoration(
-                color: available ? AppColors.emerald : AppColors.coral,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
             ),
             const SizedBox(width: AppSpacing.xs),
             // Wraps instead of overflowing with large text.
