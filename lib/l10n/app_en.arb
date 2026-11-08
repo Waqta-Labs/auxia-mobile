@@ -229,6 +229,7 @@
   "deliveryTransaction": "View transaction on Sepolia",
   "deliveryAnchoredAgo": "Anchored {ago}",
   "actionNextMission": "Next mission",
+  "actionCorrectDelivery": "Correct and register again",
   "actionRefreshStatus": "Refresh status",
   "actionScanAgain": "Scan again",
   "mapsCitizenTitle": "Offline maps by region",

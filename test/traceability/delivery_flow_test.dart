@@ -115,6 +115,44 @@ void main() {
       expect(record.rejection, 'La cantidad supera la del plan.');
     });
 
+    test(
+      'a refused delivery reopens its mission and can be sent again',
+      () async {
+        gateway.registerResult = const Left(
+          ValidationFailure('La cantidad supera la del plan.', statusCode: 422),
+        );
+        await service.register(
+          order: sampleOrder,
+          signaturePath: '/s.png',
+          photoPath: '/p.jpg',
+        );
+        final reopened = <String>[];
+        final item = (await outbox.due()).single;
+        await DeliveryRegistrationHandler(
+          records,
+          gateway,
+          onRejected: (id) async => reopened.add(id),
+        ).send(item);
+        // The sync engine leaves a refused write out of the queue.
+        await outbox.markRejected(item.id, 'La cantidad supera la del plan.');
+
+        expect(reopened, [sampleOrder.deliveryId]);
+
+        final corrected = await service.register(
+          order: sampleOrder,
+          signaturePath: '/s.png',
+          photoPath: '/p.jpg',
+        );
+
+        expect(corrected.isRight(), isTrue);
+        expect(
+          (await records.find(sampleOrder.deliveryId))!.status,
+          DeliveryRecordStatus.queued,
+        );
+        expect((await outbox.due()).single.id, item.id);
+      },
+    );
+
     test('a lost signal keeps the delivery queued', () async {
       gateway.registerResult = const Left(NetworkFailure());
       await service.register(
@@ -154,6 +192,30 @@ void main() {
   });
 
   group('DeliveryCubit (A_08)', () {
+    test('a refused delivery is corrected from its evidence', () async {
+      await records.save(
+        DeliveryRecord(
+          order: sampleOrder,
+          deliveredAt: DateTime(2026, 11, 8, 10),
+          signaturePath: '/s.png',
+          photoPath: '/p.jpg',
+          status: DeliveryRecordStatus.queued,
+        ).rejected('La cantidad supera la del plan.'),
+      );
+      final delivery = cubit();
+      addTearDown(delivery.close);
+      await delivery.start();
+      expect(delivery.state.step, DeliveryStep.blockchain);
+
+      delivery.correct();
+
+      expect(delivery.state.step, DeliveryStep.evidence);
+      expect(delivery.state.record, isNull);
+      expect(delivery.state.signaturePath, '/s.png');
+      expect(delivery.state.photoPath, '/p.jpg');
+      expect(delivery.state.evidenceComplete, isTrue);
+    });
+
     test('a wrong QR does not open the evidence step', () async {
       final delivery = cubit()..scanned('8b7c0000-0000-4000-8000-000000000000');
 

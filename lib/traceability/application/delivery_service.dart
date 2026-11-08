@@ -31,7 +31,8 @@ class DeliveryService {
 
   /// Saves the delivery with its evidence and queues its registration. It
   /// works without signal: the record keeps the time of the delivery in the
-  /// field (R-02).
+  /// field (R-02). A delivery the backend refused can be corrected and saved
+  /// again.
   Future<Either<Failure, DeliveryRecord>> register({
     required DeliveryOrder order,
     required String signaturePath,
@@ -88,10 +89,13 @@ class DeliveryService {
 /// SHA-256 without personal data and anchors it (TS-C02); the device never
 /// talks to the Blockchain.
 class DeliveryRegistrationHandler implements OutboxHandler {
-  DeliveryRegistrationHandler(this._records, this._gateway);
+  DeliveryRegistrationHandler(this._records, this._gateway, {this.onRejected});
 
   final DeliveryRecordRepository _records;
   final DeliveryGateway _gateway;
+
+  /// The backend refused the delivery: its mission must be open again.
+  final Future<void> Function(String deliveryId)? onRejected;
 
   @override
   String get type => deliveryOutboxType;
@@ -108,6 +112,7 @@ class DeliveryRegistrationHandler implements OutboxHandler {
         return const Right(unit);
       case Left(:final value) when !value.isRetryable:
         await _records.save(record.rejected(value.message));
+        await onRejected?.call(record.deliveryId);
         return Left(value);
       case Left(:final value):
         return Left(value);

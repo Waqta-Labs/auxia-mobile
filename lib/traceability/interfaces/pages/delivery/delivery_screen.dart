@@ -177,6 +177,11 @@ class _DeliveryView extends StatelessWidget {
                   ),
                 ],
                 if (state.step == DeliveryStep.blockchain) ...[
+                  if (state.record?.status == DeliveryRecordStatus.rejected)
+                    FilledButton(
+                      onPressed: cubit.correct,
+                      child: Text(l10n.actionCorrectDelivery),
+                    ),
                   if (state.record?.status == DeliveryRecordStatus.registered)
                     OutlinedButton(
                       onPressed: cubit.refresh,

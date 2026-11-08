@@ -527,6 +527,10 @@
     }
   },
   "actionNextMission": "Siguiente misión",
+  "actionCorrectDelivery": "Corregir y registrar de nuevo",
+  "@actionCorrectDelivery": {
+    "description": "A_08: the backend refused the delivery; back to its evidence."
+  },
   "actionRefreshStatus": "Actualizar estado",
   "actionScanAgain": "Escanear de nuevo",
   "mapsCitizenTitle": "Mapas offline por región",

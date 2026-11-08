@@ -81,7 +81,11 @@ Future<void> configureDependencies({AppConfig? config}) async {
           CitizenReportHandler(getIt(), getIt(), getIt()),
           CitizenReportDetailHandler(getIt(), getIt()),
           CitizenEvidenceHandler(getIt()),
-          DeliveryRegistrationHandler(getIt(), getIt()),
+          DeliveryRegistrationHandler(
+            getIt(),
+            getIt(),
+            onRejected: (id) => getIt<MissionService>().reopen(id),
+          ),
           BrigadeRegistrationHandler(getIt(), getIt(), getIt()),
         ],
       ),

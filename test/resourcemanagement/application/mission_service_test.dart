@@ -81,6 +81,21 @@ void main() {
     );
   });
 
+  test('a refused delivery opens its mission again', () async {
+    final missions = service();
+    await missions.refresh();
+    await missions.complete('delivery-1');
+
+    await missions.reopen('delivery-1');
+    // The backend still has it assigned: the refresh keeps it open.
+    await missions.refresh();
+
+    expect(
+      (await missions.cached()).missions.single.status,
+      MissionStatus.navigating,
+    );
+  });
+
   test('a mission completed in the backend is shown as completed', () async {
     final missions = service();
     await missions.refresh();
