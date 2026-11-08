@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 
 import '../../emergencymanagement/application/citizen_report_sync.dart';
 import '../../emergencymanagement/application/mesh_relay_service.dart';
+import '../../emergencymanagement/application/mesh_service.dart';
 import '../../emergencymanagement/application/quick_evidence.dart';
 import '../../emergencymanagement/application/sos_service.dart';
 import '../../emergencymanagement/domain/repositories/citizen_report_gateway.dart';
@@ -12,8 +13,10 @@ import '../../emergencymanagement/domain/repositories/citizen_report_repository.
 import '../../emergencymanagement/domain/repositories/mesh_relay_repository.dart';
 import '../../emergencymanagement/infrastructure/api/http_citizen_report_gateway.dart';
 import '../../emergencymanagement/infrastructure/device/device_quick_evidence.dart';
+import '../../emergencymanagement/infrastructure/mesh/nearby_mesh_network.dart';
 import '../../emergencymanagement/infrastructure/persistence/sqlite_citizen_report_repository.dart';
 import '../../emergencymanagement/infrastructure/persistence/sqlite_mesh_relay_repository.dart';
+import '../../emergencymanagement/interfaces/mesh_cubit.dart';
 import '../../identityaccess/application/auth_service.dart';
 import '../../identityaccess/application/brigade_registration_service.dart';
 import '../../identityaccess/application/profile_service.dart';
@@ -147,6 +150,15 @@ Future<void> configureDependencies({AppConfig? config}) async {
         bodyOf: citizenReportBody,
       ),
     )
+    ..registerLazySingleton<MeshService>(
+      () => MeshService(
+        NearbyMeshNetwork(),
+        DeviceMeshPermissions(),
+        SqliteMeshSettings(database.db),
+        getIt(),
+      ),
+    )
+    ..registerLazySingleton<MeshCubit>(() => MeshCubit(getIt<MeshService>()))
     ..registerLazySingleton<MyReportsService>(
       () => MyReportsService(getIt(), getIt(), outbox: getIt()),
     )
