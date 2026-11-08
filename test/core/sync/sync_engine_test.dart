@@ -202,4 +202,46 @@ void main() {
       await sync.stop();
     },
   );
+
+  test('a write that failed without signal is retried soon', () async {
+    final handler = _ScriptedHandler([
+      const Left(NetworkFailure()),
+      const Left(NetworkFailure()),
+      const Left(NetworkFailure()),
+      const Left(NetworkFailure()),
+    ]);
+    final sync = engine(handler);
+    await outbox.enqueue(type: 'citizen_report', payload: const {}, id: 'a');
+
+    late DateTime lastAttempt;
+    for (var i = 0; i < 4; i++) {
+      lastAttempt = now;
+      await sync.syncNow();
+      now = (await outbox.find('a'))!.nextAttemptAt;
+    }
+
+    // Losing the signal is not the fault of the backend: the wait does not
+    // grow, so the report leaves soon after the signal is back (R-02).
+    final item = (await outbox.find('a'))!;
+    expect(item.attempts, 4);
+    expect(item.nextAttemptAt.difference(lastAttempt), offlineRetryDelay);
+    expect(handler.sent, ['a', 'a', 'a', 'a']);
+  });
+
+  test('every waiting write is sent as soon as the network is back', () async {
+    final handler = _ScriptedHandler([const Left(ServerFailure('down'))]);
+    final sync = engine(handler);
+    await outbox.enqueue(type: 'citizen_report', payload: const {}, id: 'a');
+    await sync.syncNow();
+    expect((await outbox.find('a'))!.nextAttemptAt, isNot(now));
+
+    network.set(online: false);
+    await sync.start();
+    network.set(online: true);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+
+    expect(handler.sent, ['a', 'a']);
+    expect((await outbox.find('a'))!.status, OutboxStatus.sent);
+    await sync.stop();
+  });
 }

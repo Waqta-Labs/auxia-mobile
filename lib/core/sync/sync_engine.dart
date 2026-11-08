@@ -19,6 +19,11 @@ abstract interface class OutboxHandler {
 }
 
 /// Waiting time before the next attempt: 5 s, 10 s, 20 s… up to 5 min.
+/// Wait after a send that failed for lack of signal. It does not grow with
+/// the attempts: the backend did nothing wrong, and a report must leave soon
+/// after the signal is back (R-02: under 30 s).
+const Duration offlineRetryDelay = Duration(seconds: 15);
+
 Duration retryDelay(int attempts) {
   const base = Duration(seconds: 5);
   const cap = Duration(minutes: 5);
@@ -143,7 +148,8 @@ class SyncEngine implements SyncController {
     _networkSubscription = _connectivity.changes.listen((network) {
       final cameOnline = network.isOnline && !_state.network.isOnline;
       _emit(_state.copyWith(network: network));
-      if (cameOnline) unawaited(syncNow());
+      // Everything waiting goes now, even writes still in their backoff.
+      if (cameOnline) unawaited(retryAll());
     });
     _outboxSubscription = _outbox.changes.listen((_) {
       unawaited(_refreshPending());
@@ -231,7 +237,7 @@ class SyncEngine implements SyncController {
         _emit(_state.copyWith(needsSignIn: true));
         return _Outcome.unauthorized;
       case Left(value: final NetworkFailure failure):
-        await _retryLater(item, failure.message);
+        await _retryLater(item, failure.message, delay: offlineRetryDelay);
         return _Outcome.offline;
       case Left(value: final failure) when failure.isRetryable:
         await _retryLater(item, failure.message);
@@ -242,12 +248,12 @@ class SyncEngine implements SyncController {
     }
   }
 
-  Future<void> _retryLater(OutboxItem item, String error) {
+  Future<void> _retryLater(OutboxItem item, String error, {Duration? delay}) {
     final attempts = item.attempts + 1;
     return _outbox.reschedule(
       item.id,
       attempts: attempts,
-      nextAttemptAt: _clock().add(retryDelay(attempts)),
+      nextAttemptAt: _clock().add(delay ?? retryDelay(attempts)),
       error: error,
     );
   }
