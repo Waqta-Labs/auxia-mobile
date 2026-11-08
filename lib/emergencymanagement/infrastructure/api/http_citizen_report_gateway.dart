@@ -45,6 +45,22 @@ class HttpCitizenReportGateway implements CitizenReportGateway {
   }
 
   @override
+  Future<Either<Failure, Unit>> submitRelayed(
+    Map<String, Object?> body, {
+    required int hops,
+  }) async {
+    final result = await _client.post(
+      path,
+      body: {
+        ...body,
+        'relay': {'hops': hops},
+      },
+      parse: (_) => unit,
+    );
+    return result.mapLeft(_channelNotReady);
+  }
+
+  @override
   Future<Either<Failure, RemoteReportStatus>> status(
     String clientReportId,
   ) async {

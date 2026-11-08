@@ -90,6 +90,18 @@ class AppDatabase {
       'ALTER TABLE missions ADD COLUMN position INTEGER NOT NULL DEFAULT 0',
       "DELETE FROM key_values WHERE key = 'missions.myBrigadeId'",
     ],
+    // Version 6: SOS of other phones received by Mesh (plan D5).
+    [
+      '''
+      CREATE TABLE mesh_relays (
+        id TEXT PRIMARY KEY,
+        body TEXT NOT NULL,
+        hops INTEGER NOT NULL,
+        received_at INTEGER NOT NULL,
+        uploaded INTEGER NOT NULL DEFAULT 0
+      )
+      ''',
+    ],
   ];
 
   static int get version => migrations.length;

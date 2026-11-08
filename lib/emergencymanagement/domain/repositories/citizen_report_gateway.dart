@@ -40,6 +40,13 @@ abstract interface class CitizenReportGateway {
 
   Future<Either<Failure, RemoteReportStatus>> status(String clientReportId);
 
+  /// Uploads an SOS of another phone that arrived by Mesh, as its origin
+  /// built it, through [hops] phones this one included (plan D5).
+  Future<Either<Failure, Unit>> submitRelayed(
+    Map<String, Object?> body, {
+    required int hops,
+  });
+
   /// Uploads the file at [path] as an evidence of the SOS [clientReportId].
   Future<Either<Failure, Unit>> uploadEvidence(
     String clientReportId, {
