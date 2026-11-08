@@ -1,3 +1,4 @@
+import 'package:auxia_mobile/core/theme/app_colors.dart';
 import 'package:auxia_mobile/resourcemanagement/domain/model/mission.dart';
 import 'package:auxia_mobile/resourcemanagement/interfaces/widgets/missions_map.dart';
 import 'package:auxia_mobile/shared/domain/geo_point.dart';
@@ -37,5 +38,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('94'), findsOneWidget);
+  });
+
+  test('a critical mission glows coral, the others in their color', () {
+    expect(glowColor(94), AppColors.coral);
+    expect(glowColor(78), scoreColor(78));
+    expect(glowColor(null), scoreColor(null));
   });
 }
