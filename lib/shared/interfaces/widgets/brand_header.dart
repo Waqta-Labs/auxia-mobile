@@ -17,7 +17,12 @@ class BrandHeader extends StatelessWidget {
         const AuxiaMark(),
         const SizedBox(width: AppSpacing.md),
         const Spacer(),
-        if (trailing != null) Flexible(flex: 4, child: trailing!),
+        if (trailing != null)
+          Flexible(
+            flex: 4,
+            // On the right edge, as in the mockups of A_03 and A_07.
+            child: Align(alignment: Alignment.centerRight, child: trailing),
+          ),
       ],
     );
   }

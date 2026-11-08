@@ -218,8 +218,8 @@
   "accessDamagedBuilding": "Edificio dañado",
   "detailEvidence": "Evidencia rápida (opcional)",
   "evidenceAudio": "Audio · 5 s",
-  "evidenceAudioHint": "Mantén para grabar",
-  "evidenceAudioRecording": "Grabando… suelta para terminar",
+  "evidenceAudioHint": "Mantén o toca para grabar",
+  "evidenceAudioRecording": "Grabando… suelta o toca para terminar",
   "evidenceAudioSaved": "Audio guardado",
   "evidencePhoto": "Foto rápida",
   "evidencePhotoHint": "1 toque",
@@ -264,6 +264,15 @@
         "type": "String"
       }
     }
+  },
+  "channelsTitle": "Canales de comunicación",
+  "@channelsTitle": {
+    "description": "A_06 / A_09: section of the sync channels (6.4.4)."
+  },
+  "channelsHint": "Sin señal, tus datos esperan en el teléfono y se envían solos al volver la conexión.",
+  "settingsSaved": "Configuración guardada",
+  "@settingsSaved": {
+    "description": "A_06 / A_09: a setting was saved (6.4.4)."
   },
   "actionForceRetry": "Forzar reintento de sincronización",
   "reportsQueue": "{count, plural, =1{Cola local · 1 reporte} other{Cola local · {count} reportes}}",
@@ -509,6 +518,21 @@
   "actionSave": "Guardar",
   "actionRegisterDelivery": "Registrar entrega",
   "deliveryEvidenceMissing": "Falta la firma del beneficiario o la foto de recepción.",
+  "deliveryLocationFound": "Ubicación GPS · {coordinates}",
+  "@deliveryLocationFound": {
+    "description": "A_08: place of the delivery (US-15).",
+    "placeholders": {
+      "coordinates": {
+        "type": "String"
+      }
+    }
+  },
+  "deliveryLocating": "Buscando ubicación GPS…",
+  "deliveryLocationMissing": "Sin ubicación GPS",
+  "deliveryNoLocationTitle": "¿Registrar sin ubicación?",
+  "deliveryNoLocationBody": "No se pudo obtener la ubicación GPS. La entrega quedará registrada sin coordenadas.",
+  "actionRegisterWithoutLocation": "Registrar sin ubicación",
+  "actionRetry": "Reintentar",
   "deliveryQueued": "Entrega guardada · se registrará al detectar señal",
   "deliveryAnchoring": "Registrada · anclando el hash en Blockchain…",
   "deliveryAnchored": "Validado e Inmutable en Blockchain",

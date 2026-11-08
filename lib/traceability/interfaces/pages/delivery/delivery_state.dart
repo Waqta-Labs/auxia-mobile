@@ -13,6 +13,8 @@ class DeliveryState extends Equatable {
     this.submitting = false,
     this.cameraFailed = false,
     this.record,
+    this.location,
+    this.locating = false,
   });
 
   final DeliveryOrder order;
@@ -25,6 +27,12 @@ class DeliveryState extends Equatable {
 
   /// The saved delivery, once registered from the device.
   final DeliveryRecord? record;
+
+  /// Where the delivery happens (US-15), once the GPS answers.
+  final GeoPoint? location;
+
+  /// The GPS is being asked.
+  final bool locating;
 
   bool get evidenceComplete =>
       signaturePath != null &&
@@ -48,6 +56,8 @@ class DeliveryState extends Equatable {
     bool? submitting,
     bool? cameraFailed,
     DeliveryRecord? Function()? record,
+    GeoPoint? Function()? location,
+    bool? locating,
   }) => DeliveryState(
     order: order ?? this.order,
     step: step ?? this.step,
@@ -57,6 +67,8 @@ class DeliveryState extends Equatable {
     submitting: submitting ?? this.submitting,
     cameraFailed: cameraFailed ?? this.cameraFailed,
     record: record != null ? record() : this.record,
+    location: location != null ? location() : this.location,
+    locating: locating ?? this.locating,
   );
 
   @override
@@ -69,5 +81,7 @@ class DeliveryState extends Equatable {
     submitting,
     cameraFailed,
     record,
+    location,
+    locating,
   ];
 }

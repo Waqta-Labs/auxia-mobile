@@ -155,6 +155,8 @@ void main() {
     expect(find.bySemanticsLabel('Celular · no disponible'), findsOneWidget);
     expect(find.bySemanticsLabel('Mesh · no disponible'), findsOneWidget);
     expect(find.bySemanticsLabel('Satélite · no disponible'), findsOneWidget);
+    // Written, not only a coral dot.
+    expect(find.text('Mesh · no disponible'), findsOneWidget);
     expect(find.textContaining('Aún no enviaste reportes'), findsOneWidget);
   });
 

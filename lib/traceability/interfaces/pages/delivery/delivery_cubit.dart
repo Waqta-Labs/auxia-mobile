@@ -5,6 +5,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/location/location_service.dart';
+import '../../../../shared/domain/geo_point.dart';
 import '../../../application/delivery_evidence.dart';
 import '../../../application/delivery_service.dart';
 import '../../../domain/model/delivery.dart';
@@ -45,6 +46,7 @@ class DeliveryCubit extends Cubit<DeliveryState> {
     final id = deliveryIdFromQr(raw);
     if (id != null && id == state.order.deliveryId.toLowerCase()) {
       emit(state.copyWith(step: DeliveryStep.evidence, wrongCode: false));
+      unawaited(locate());
     } else {
       emit(state.copyWith(wrongCode: true));
     }
@@ -66,6 +68,22 @@ class DeliveryCubit extends Cubit<DeliveryState> {
         signaturePath: () => record.signaturePath,
         photoPath: () => record.photoPath,
         record: () => null,
+      ),
+    );
+    unawaited(locate());
+  }
+
+  /// Asks the GPS for the place of the delivery while the evidence is taken
+  /// (US-15), so A_08 can say whether it has it before registering.
+  Future<void> locate() async {
+    if (state.locating) return;
+    emit(state.copyWith(locating: true));
+    final result = await _location.locate(timeout: const Duration(seconds: 15));
+    if (isClosed) return;
+    emit(
+      state.copyWith(
+        locating: false,
+        location: result is LocationFix ? () => result.point : null,
       ),
     );
   }
@@ -107,14 +125,18 @@ class DeliveryCubit extends Cubit<DeliveryState> {
   Future<void> submit() async {
     if (!state.evidenceComplete || state.submitting) return;
     emit(state.copyWith(submitting: true));
-    final position = await _location.locate(
-      timeout: const Duration(seconds: 5),
-    );
+    var location = state.location;
+    if (location == null) {
+      final position = await _location.locate(
+        timeout: const Duration(seconds: 5),
+      );
+      if (position is LocationFix) location = position.point;
+    }
     final result = await _service.register(
       order: state.order,
       signaturePath: state.signaturePath!,
       photoPath: state.photoPath!,
-      location: position is LocationFix ? position.point : null,
+      location: location,
     );
     if (isClosed) return;
     await result.fold(

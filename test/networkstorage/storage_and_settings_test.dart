@@ -146,6 +146,9 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Descargar'), findsNothing);
+      expect(find.text('CANALES DE COMUNICACIÓN'), findsOneWidget);
+      expect(find.text('Mesh · no disponible'), findsOneWidget);
+      expect(find.text('Satélite · no disponible'), findsOneWidget);
       expect(find.text('BASE DE DATOS LOCAL · SQLITE'), findsOneWidget);
       expect(find.text('Reportes locales'), findsOneWidget);
       expect(find.text('Cifrada · OK'), findsOneWidget);
@@ -171,6 +174,7 @@ void main() {
 
       expect(localeCubit.state, const Locale('en'));
       expect(find.text('Network and storage'), findsOneWidget);
+      expect(find.text('Settings saved'), findsOneWidget);
     });
   });
 }

@@ -16,6 +16,12 @@ Color scoreColor(double? score) {
   return AppColors.royalBlue;
 }
 
+/// Color of the glow around a mission: coral for a critical Urgency Score,
+/// the urgency color of the design system (6.2) and of the A_07 mockup;
+/// otherwise the color of its marker.
+Color glowColor(double? score) =>
+    score != null && score >= 85 ? AppColors.coral : scoreColor(score);
+
 /// Stylized map of A_07, as in the mockup: a dark grid with a glow by
 /// Urgency Score around each mission, numbered markers, the position of the
 /// brigadist and the dashed route to the active mission.
@@ -137,7 +143,7 @@ class _MissionsMapState extends State<MissionsMap> {
                           point: _latLng(mission.location!),
                           width: _glowSize,
                           height: _glowSize,
-                          child: _Glow(color: scoreColor(mission.score)),
+                          child: _Glow(color: glowColor(mission.score)),
                         ),
                   ],
                 ),
