@@ -3,6 +3,7 @@ import 'package:auxia_mobile/core/sync/sync_cubit.dart';
 import 'package:auxia_mobile/emergencymanagement/application/citizen_report_sync.dart';
 import 'package:auxia_mobile/emergencymanagement/domain/model/citizen_report.dart';
 import 'package:auxia_mobile/emergencymanagement/infrastructure/persistence/sqlite_citizen_report_repository.dart';
+import 'package:auxia_mobile/emergencymanagement/interfaces/mesh_cubit.dart';
 import 'package:auxia_mobile/emergencymanagement/interfaces/pages/my_reports/my_reports_cubit.dart';
 import 'package:auxia_mobile/emergencymanagement/interfaces/pages/my_reports/my_reports_screen.dart';
 import 'package:flutter/material.dart';
@@ -53,6 +54,7 @@ void main() {
     await tester.pumpWidget(
       MultiBlocProvider(
         providers: [
+          BlocProvider(create: (_) => MeshCubit.off()),
           BlocProvider(create: (_) => SyncCubit(sync)),
           BlocProvider(create: (_) => MyReportsCubit(service)..start()),
         ],
@@ -153,10 +155,13 @@ void main() {
 
     expect(find.text('Sin señal'), findsOneWidget);
     expect(find.bySemanticsLabel('Celular · no disponible'), findsOneWidget);
-    expect(find.bySemanticsLabel('Mesh · no disponible'), findsOneWidget);
-    expect(find.bySemanticsLabel('Satélite · no disponible'), findsOneWidget);
+    expect(find.bySemanticsLabel('Mesh · desactivado'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Satélite · no disponible en este dispositivo'),
+      findsOneWidget,
+    );
     // Written, not only a coral dot.
-    expect(find.text('Mesh · no disponible'), findsOneWidget);
+    expect(find.text('Mesh · desactivado'), findsOneWidget);
     expect(find.textContaining('Aún no enviaste reportes'), findsOneWidget);
   });
 

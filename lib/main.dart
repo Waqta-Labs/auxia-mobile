@@ -10,6 +10,8 @@ import 'core/localization/locale_cubit.dart';
 import 'core/routing/app_router.dart';
 import 'core/sync/sync_cubit.dart';
 import 'core/sync/sync_engine.dart';
+import 'emergencymanagement/application/mesh_service.dart';
+import 'emergencymanagement/interfaces/mesh_cubit.dart';
 import 'identityaccess/interfaces/profile_cubit.dart';
 
 Future<void> main() async {
@@ -20,6 +22,8 @@ Future<void> main() async {
   final profileCubit = getIt<ProfileCubit>();
   unawaited(profileCubit.load());
   unawaited(getIt<SyncEngine>().start());
+  // Mesh (plan D5) resumes if the user left it on.
+  unawaited(getIt<MeshService>().start());
 
   runApp(
     AuxiaApp(
@@ -27,6 +31,7 @@ Future<void> main() async {
       localeCubit: getIt<LocaleCubit>(),
       profileCubit: profileCubit,
       syncCubit: getIt<SyncCubit>(),
+      meshCubit: getIt<MeshCubit>(),
     ),
   );
 }

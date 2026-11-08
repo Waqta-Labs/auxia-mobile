@@ -7,6 +7,7 @@ import 'core/localization/locale_cubit.dart';
 import 'core/sync/sync_cubit.dart';
 import 'core/sync/sync_engine.dart';
 import 'core/theme/app_theme.dart';
+import 'emergencymanagement/interfaces/mesh_cubit.dart';
 import 'identityaccess/interfaces/profile_cubit.dart';
 import 'l10n/generated/app_localizations.dart';
 
@@ -18,12 +19,16 @@ class AuxiaApp extends StatelessWidget {
     required this.localeCubit,
     required this.profileCubit,
     required this.syncCubit,
+    this.meshCubit,
   });
 
   final GoRouter router;
   final LocaleCubit localeCubit;
   final ProfileCubit profileCubit;
   final SyncCubit syncCubit;
+
+  /// Mesh of the phone (plan D5); off when not given.
+  final MeshCubit? meshCubit;
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +37,10 @@ class AuxiaApp extends StatelessWidget {
         BlocProvider.value(value: localeCubit),
         BlocProvider.value(value: profileCubit),
         BlocProvider.value(value: syncCubit),
+        if (meshCubit case final mesh?)
+          BlocProvider.value(value: mesh)
+        else
+          BlocProvider(create: (_) => MeshCubit.off()),
       ],
       // "Consulta el estado al sincronizar" (plan D3): after each sync pass
       // the app asks whether the credential of A_02 was decided.

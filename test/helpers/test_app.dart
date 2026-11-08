@@ -262,6 +262,9 @@ class FakeCitizenReportGateway implements CitizenReportGateway {
   final Map<String, Either<Failure, RemoteReportStatus>> statuses = {};
   final List<(String, String)> submitted = [];
 
+  /// (body, hops) of each SOS uploaded for another phone.
+  final List<(Map<String, Object?>, int)> relayed = [];
+
   /// (clientReportId, attachmentId, path) of each uploaded evidence.
   final List<(String, String, String)> uploaded = [];
   Either<Failure, Unit> uploadResult = const Right(unit);
@@ -274,6 +277,15 @@ class FakeCitizenReportGateway implements CitizenReportGateway {
     CitizenReport? relatedReport,
   }) async {
     submitted.add((clientReportId ?? report.id, text ?? report.toReportText()));
+    return submitResult;
+  }
+
+  @override
+  Future<Either<Failure, Unit>> submitRelayed(
+    Map<String, Object?> body, {
+    required int hops,
+  }) async {
+    relayed.add((body, hops));
     return submitResult;
   }
 

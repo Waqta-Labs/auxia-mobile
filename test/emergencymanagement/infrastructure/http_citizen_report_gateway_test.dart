@@ -197,4 +197,22 @@ void main() {
       CitizenReportStatus.prioritized,
     );
   });
+
+  test('an SOS of another phone goes with relay.hops (plan D5)', () async {
+    final adapter = FakeHttpAdapter({
+      'POST /api/v1/public/field-reports': (201, {'id': 'x'}),
+    });
+    final body = citizenReportBody(_report);
+
+    final result = await HttpCitizenReportGateway(
+      fakeApiClient(adapter),
+    ).submitRelayed(body, hops: 2);
+
+    expect(result.isRight(), isTrue);
+    final sent =
+        jsonDecode(jsonEncode(adapter.requests.single.data))
+            as Map<String, Object?>;
+    expect(sent['clientReportId'], body['clientReportId']);
+    expect(sent['relay'], {'hops': 2});
+  });
 }

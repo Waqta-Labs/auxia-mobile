@@ -17,6 +17,9 @@ abstract final class CitizenOutboxTypes {
 
   /// The photo or the audio of an SOS, uploaded once the SOS is stored.
   static const String evidence = 'citizen_report_evidence';
+
+  /// An SOS of another phone, received by Mesh (plan D5).
+  static const String relay = 'citizen_report_relay';
 }
 
 /// Queues the photo and the audio of an SOS for upload (plan, iteration 1).
