@@ -141,7 +141,8 @@ void main() {
 
     await tester.tap(find.widgetWithText(OutlinedButton, 'Cambiar de rol'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(TextButton, 'Cambiar de rol'));
+    expect(find.byType(BottomSheet), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Cambiar de rol'));
     await tester.pumpAndSettle();
 
     expect(find.text('Crea tu cuenta'), findsOneWidget);
@@ -179,7 +180,8 @@ void main() {
 
     await tester.tap(find.widgetWithText(OutlinedButton, 'Cerrar sesión'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(TextButton, 'Cerrar sesión'));
+    expect(find.byType(BottomSheet), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Cerrar sesión'));
     await tester.pumpAndSettle();
 
     expect(app.sessions.session, isNull);

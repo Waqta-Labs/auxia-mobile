@@ -202,24 +202,25 @@ class _DeliveryView extends StatelessWidget {
 
   Future<void> _typeCode(BuildContext context) async {
     final cubit = context.read<DeliveryCubit>();
-    final code = await showDialog<String>(
+    final code = await showModalBottomSheet<String>(
       context: context,
-      builder: (_) => const _ManualCodeDialog(),
+      isScrollControlled: true,
+      builder: (_) => const _ManualCodeSheet(),
     );
     if (code != null && code.trim().isNotEmpty) cubit.scanned(code);
   }
 }
 
-/// "Ingresar el código a mano". It owns its text controller, so the field is
-/// released only after the closing animation of the dialog ends.
-class _ManualCodeDialog extends StatefulWidget {
-  const _ManualCodeDialog();
+/// "Ingresar el código a mano", in a bottom sheet (6.1.2). It owns its text
+/// controller, so the field is released only after the sheet closes.
+class _ManualCodeSheet extends StatefulWidget {
+  const _ManualCodeSheet();
 
   @override
-  State<_ManualCodeDialog> createState() => _ManualCodeDialogState();
+  State<_ManualCodeSheet> createState() => _ManualCodeSheetState();
 }
 
-class _ManualCodeDialogState extends State<_ManualCodeDialog> {
+class _ManualCodeSheetState extends State<_ManualCodeSheet> {
   final TextEditingController _controller = TextEditingController();
 
   @override
@@ -231,23 +232,45 @@ class _ManualCodeDialogState extends State<_ManualCodeDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return AlertDialog(
-      title: Text(l10n.deliveryManualCode),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        decoration: InputDecoration(labelText: l10n.deliveryCodeLabel),
+    return SafeArea(
+      child: Padding(
+        // Above the keyboard.
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.screen,
+          AppSpacing.screen,
+          AppSpacing.screen,
+          AppSpacing.screen + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              header: true,
+              child: Text(
+                l10n.deliveryManualCode,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              decoration: InputDecoration(labelText: l10n.deliveryCodeLabel),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(_controller.text),
+              child: Text(l10n.actionConfirm),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l10n.actionCancel),
+            ),
+          ],
+        ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.actionCancel),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(_controller.text),
-          child: Text(l10n.actionConfirm),
-        ),
-      ],
     );
   }
 }

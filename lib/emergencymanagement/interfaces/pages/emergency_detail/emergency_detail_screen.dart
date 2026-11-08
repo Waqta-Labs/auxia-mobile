@@ -305,7 +305,7 @@ class _CheckTile extends StatelessWidget {
   }
 }
 
-/// "Audio · 5 s · Mantén para grabar".
+/// "Audio · 5 s · Mantén para grabar", or tap to start and stop.
 class _AudioTile extends StatelessWidget {
   const _AudioTile({
     required this.recording,
@@ -339,7 +339,9 @@ class _AudioTile extends StatelessWidget {
             : l10n.evidenceAudioHint,
         done: saved && !recording,
         active: recording,
-        onTap: null,
+        // Not everyone can hold (screen readers, motor impairments): a tap
+        // starts, and another tap or the 5 s limit stops.
+        onTap: recording ? onStop : onStart,
       ),
     );
   }

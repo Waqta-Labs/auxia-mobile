@@ -13,6 +13,7 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../shared/interfaces/format_bytes.dart';
 import '../../../../shared/interfaces/time_ago.dart';
 import '../../../../shared/interfaces/widgets/app_card.dart';
+import '../../../../shared/interfaces/widgets/confirm_sheet.dart';
 import '../../../../shared/interfaces/widgets/connectivity_badge.dart';
 import '../../../../shared/interfaces/widgets/section_label.dart';
 import '../../../../shared/interfaces/widgets/sync_channels.dart';
@@ -100,7 +101,7 @@ class NetworkStorageScreen extends StatelessWidget {
   Future<void> _confirmSignOut(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     final profileCubit = context.read<ProfileCubit>();
-    final confirmed = await _confirm(
+    final confirmed = await showConfirmSheet(
       context,
       title: l10n.signOutConfirmTitle,
       body: l10n.signOutConfirmBody,
@@ -112,40 +113,13 @@ class NetworkStorageScreen extends StatelessWidget {
   Future<void> _confirmChangeRole(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     final profileCubit = context.read<ProfileCubit>();
-    final confirmed = await _confirm(
+    final confirmed = await showConfirmSheet(
       context,
       title: l10n.changeRoleConfirmTitle,
       body: l10n.changeRoleConfirmBody,
       action: l10n.actionConfirmChangeRole,
     );
     if (confirmed) await profileCubit.reset();
-  }
-
-  static Future<bool> _confirm(
-    BuildContext context, {
-    required String title,
-    required String body,
-    required String action,
-  }) async {
-    final l10n = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(body),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l10n.actionCancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(action),
-          ),
-        ],
-      ),
-    );
-    return confirmed ?? false;
   }
 }
 

@@ -274,6 +274,7 @@ void main() {
 
     await tester.tap(find.text('Ingresar el código a mano'));
     await tester.pumpAndSettle();
+    expect(find.byType(BottomSheet), findsOneWidget);
     await tester.enterText(find.byType(TextField), sampleOrder.deliveryId);
     await tester.tap(find.text('Confirmar'));
     await tester.pumpAndSettle();
