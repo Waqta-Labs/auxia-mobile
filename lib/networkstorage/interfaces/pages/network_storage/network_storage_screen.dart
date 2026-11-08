@@ -15,6 +15,7 @@ import '../../../../shared/interfaces/time_ago.dart';
 import '../../../../shared/interfaces/widgets/app_card.dart';
 import '../../../../shared/interfaces/widgets/connectivity_badge.dart';
 import '../../../../shared/interfaces/widgets/section_label.dart';
+import '../../../../shared/interfaces/widgets/sync_channels.dart';
 import 'network_storage_cubit.dart';
 
 /// A_06 / A_09 · Red y almacenamiento, the settings of both roles.
@@ -64,6 +65,10 @@ class NetworkStorageScreen extends StatelessWidget {
                   _RegionCard(region: region),
                   const SizedBox(height: AppSpacing.xs),
                 ],
+                const SizedBox(height: AppSpacing.md),
+                SectionLabel(l10n.channelsTitle),
+                const SizedBox(height: AppSpacing.sm),
+                const _ChannelsCard(),
                 const SizedBox(height: AppSpacing.md),
                 SectionLabel(l10n.localDatabase),
                 const SizedBox(height: AppSpacing.sm),
@@ -352,8 +357,42 @@ class _LanguageSelector extends StatelessWidget {
       ],
       selected: {locale.languageCode},
       showSelectedIcon: false,
-      onSelectionChanged: (selection) =>
-          context.read<LocaleCubit>().change(Locale(selection.first)),
+      onSelectionChanged: (selection) {
+        context.read<LocaleCubit>().change(Locale(selection.first));
+        // Shown in the new language, once it applies (6.4.4: "Configuración
+        // guardada").
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context).settingsSaved)),
+          );
+        });
+      },
+    );
+  }
+}
+
+/// Communication channels of A_06 / A_09 (6.4.4): what can sync now, and
+/// what happens without signal.
+class _ChannelsCard extends StatelessWidget {
+  const _ChannelsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SyncChannels(),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            AppLocalizations.of(context).channelsHint,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+          ),
+        ],
+      ),
     );
   }
 }
