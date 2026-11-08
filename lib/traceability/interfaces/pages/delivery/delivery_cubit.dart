@@ -52,6 +52,24 @@ class DeliveryCubit extends Cubit<DeliveryState> {
 
   void rescan() => emit(state.copyWith(step: DeliveryStep.scan));
 
+  /// The backend refused the delivery: back to its evidence, kept from the
+  /// saved record, to correct it and register it again.
+  void correct() {
+    final record = state.record;
+    if (record == null || record.status != DeliveryRecordStatus.rejected) {
+      return;
+    }
+    emit(
+      state.copyWith(
+        step: DeliveryStep.evidence,
+        order: record.order,
+        signaturePath: () => record.signaturePath,
+        photoPath: () => record.photoPath,
+        record: () => null,
+      ),
+    );
+  }
+
   void changeQuantity(String resourceId, int delta) => emit(
     state.copyWith(
       order: DeliveryOrder(
@@ -122,6 +140,11 @@ class DeliveryCubit extends Cubit<DeliveryState> {
   Future<void> _reload() async {
     final record = await _service.find(state.order.deliveryId);
     if (isClosed || record == null) return;
+    // The brigadist is correcting a refused delivery.
+    if (record.status == DeliveryRecordStatus.rejected &&
+        state.step == DeliveryStep.evidence) {
+      return;
+    }
     emit(state.copyWith(step: DeliveryStep.blockchain, record: () => record));
     _schedulePolling(record);
   }

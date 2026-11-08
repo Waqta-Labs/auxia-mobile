@@ -286,6 +286,19 @@
     }
   },
   "statusSaved": "Guardado en dispositivo",
+  "statusRetrying": "Reintento de envío · intento {attempts}",
+  "@statusRetrying": {
+    "description": "A_05: a saved report whose sending failed and is retried (6.4.4).",
+    "placeholders": {
+      "attempts": {
+        "type": "int"
+      }
+    }
+  },
+  "statusSendFailed": "No se pudo enviar",
+  "@statusSendFailed": {
+    "description": "A_05: the backend refused the report."
+  },
   "statusTransmitting": "Transmitiendo…",
   "statusPrioritized": "Priorizado por IA · {score}",
   "@statusPrioritized": {
@@ -527,6 +540,10 @@
     }
   },
   "actionNextMission": "Siguiente misión",
+  "actionCorrectDelivery": "Corregir y registrar de nuevo",
+  "@actionCorrectDelivery": {
+    "description": "A_08: the backend refused the delivery; back to its evidence."
+  },
   "actionRefreshStatus": "Actualizar estado",
   "actionScanAgain": "Escanear de nuevo",
   "mapsCitizenTitle": "Mapas offline por región",

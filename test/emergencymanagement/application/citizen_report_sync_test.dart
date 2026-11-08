@@ -269,6 +269,27 @@ void main() {
       expect(updated.etaMinutes, isNull);
     });
 
+    test('tells which saved reports are retrying or failed', () async {
+      final retrying = await newSos();
+      final failed = await newSos();
+      final fresh = await newSos();
+      final now = DateTime.now();
+      await outbox.reschedule(
+        retrying.id,
+        attempts: 2,
+        nextAttemptAt: now.add(const Duration(seconds: 10)),
+        error: 'No connection',
+      );
+      await outbox.markRejected(failed.id, 'Invalid SOS');
+
+      final service = MyReportsService(reports, gateway, outbox: outbox);
+      final issues = await service.sendIssues(await reports.all());
+
+      expect(issues[retrying.id], const SendIssue.retrying(2));
+      expect(issues[failed.id], const SendIssue.failed());
+      expect(issues.containsKey(fresh.id), isFalse);
+    });
+
     test('does not ask about reports that are still on the device', () async {
       await newSos();
 

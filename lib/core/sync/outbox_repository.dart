@@ -37,7 +37,16 @@ class OutboxRepository {
       createdAt: now,
       updatedAt: now,
     );
-    await _db.insert('outbox', _toRow(item));
+    // A write the backend refused can be corrected and queued again with
+    // the same id; any other write with that id is still on its way.
+    final previous = await find(item.id);
+    await _db.insert(
+      'outbox',
+      _toRow(item),
+      conflictAlgorithm: previous?.status == OutboxStatus.rejected
+          ? ConflictAlgorithm.replace
+          : ConflictAlgorithm.abort,
+    );
     _changes.add(null);
     return item;
   }

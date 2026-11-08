@@ -6,14 +6,25 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/interfaces/time_ago.dart';
 import '../../../shared/interfaces/widgets/app_card.dart';
 import '../../../shared/interfaces/widgets/status_chip.dart';
+import '../../application/citizen_report_sync.dart';
 import '../../domain/model/citizen_report.dart';
 import 'sos_widgets.dart';
 
 /// Label and tone of each status of a citizen report (report 6.2.2).
 (String, StatusTone) reportStatusLabel(
   AppLocalizations l10n,
-  CitizenReport report,
-) => switch (report.status) {
+  CitizenReport report, {
+  SendIssue? issue,
+}) => switch (report.status) {
+  // Still on the device after failed attempts (6.4.4: "Reintento de envío").
+  CitizenReportStatus.saved when issue?.failed ?? false => (
+    l10n.statusSendFailed,
+    StatusTone.danger,
+  ),
+  CitizenReportStatus.saved when issue != null => (
+    l10n.statusRetrying(issue.attempts),
+    StatusTone.info,
+  ),
   CitizenReportStatus.saved => (l10n.statusSaved, StatusTone.info),
   CitizenReportStatus.transmitting => (
     l10n.statusTransmitting,
@@ -46,18 +57,22 @@ class ReportCard extends StatelessWidget {
     super.key,
     required this.report,
     required this.now,
+    this.issue,
     this.onTap,
   });
 
   final CitizenReport report;
   final DateTime now;
+
+  /// Failed attempts to send it, if any.
+  final SendIssue? issue;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final textTheme = Theme.of(context).textTheme;
-    final (label, tone) = reportStatusLabel(l10n, report);
+    final (label, tone) = reportStatusLabel(l10n, report, issue: issue);
     final barColor = switch (report.status) {
       CitizenReportStatus.prioritized => AppColors.lime,
       CitizenReportStatus.brigadeOnTheWay => AppColors.emerald,

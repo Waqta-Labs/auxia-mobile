@@ -81,7 +81,11 @@ Future<void> configureDependencies({AppConfig? config}) async {
           CitizenReportHandler(getIt(), getIt(), getIt()),
           CitizenReportDetailHandler(getIt(), getIt()),
           CitizenEvidenceHandler(getIt()),
-          DeliveryRegistrationHandler(getIt(), getIt()),
+          DeliveryRegistrationHandler(
+            getIt(),
+            getIt(),
+            onRejected: (id) => getIt<MissionService>().reopen(id),
+          ),
           BrigadeRegistrationHandler(getIt(), getIt(), getIt()),
         ],
       ),
@@ -129,7 +133,7 @@ Future<void> configureDependencies({AppConfig? config}) async {
     )
     ..registerLazySingleton<SosService>(() => SosService(getIt(), getIt()))
     ..registerLazySingleton<MyReportsService>(
-      () => MyReportsService(getIt(), getIt()),
+      () => MyReportsService(getIt(), getIt(), outbox: getIt()),
     )
     ..registerLazySingleton<QuickEvidence>(DeviceQuickEvidence.new)
     // Resource Management

@@ -93,6 +93,17 @@ class MissionService {
     _changes.add(null);
   }
 
+  /// The backend refused the delivery [deliveryId]: the mission is open
+  /// again, so the brigadist can correct it on A_08 and send it again.
+  Future<void> reopen(String deliveryId) async {
+    for (final mission in await _cache.missions()) {
+      if (mission.deliveryId == deliveryId) {
+        await _cache.saveMission(mission.withStatus(MissionStatus.navigating));
+      }
+    }
+    _changes.add(null);
+  }
+
   /// The backend does not know that the brigadist started navigating or
   /// already delivered offline; the device keeps that progress.
   static Mission _keepProgress(Mission fresh, List<Mission> known) {

@@ -7,13 +7,20 @@ import '../../../application/citizen_report_sync.dart';
 import '../../../domain/model/citizen_report.dart';
 
 class MyReportsState extends Equatable {
-  const MyReportsState({this.reports = const [], this.loading = true});
+  const MyReportsState({
+    this.reports = const [],
+    this.issues = const {},
+    this.loading = true,
+  });
 
   final List<CitizenReport> reports;
+
+  /// Saved reports that are retrying or failed, by report id.
+  final Map<String, SendIssue> issues;
   final bool loading;
 
   @override
-  List<Object> get props => [reports, loading];
+  List<Object> get props => [reports, issues, loading];
 }
 
 /// Mis reportes (A_05): the local queue and the status of each report.
@@ -77,8 +84,9 @@ class MyReportsCubit extends Cubit<MyReportsState> {
 
   Future<void> _load() async {
     final reports = await _service.reports();
+    final issues = await _service.sendIssues(reports);
     if (isClosed) return;
-    emit(MyReportsState(reports: reports, loading: false));
+    emit(MyReportsState(reports: reports, issues: issues, loading: false));
 
     final followed = {
       for (final report in reports)
