@@ -1,7 +1,9 @@
 import 'dart:typed_data';
 
 import 'package:auxia_mobile/core/failure.dart';
+import 'package:auxia_mobile/core/location/location_service.dart';
 import 'package:auxia_mobile/core/sync/outbox_repository.dart';
+import 'package:auxia_mobile/shared/domain/geo_point.dart';
 import 'package:auxia_mobile/traceability/application/delivery_service.dart';
 import 'package:auxia_mobile/traceability/domain/model/delivery.dart';
 import 'package:auxia_mobile/traceability/infrastructure/persistence/sqlite_delivery_record_repository.dart';
@@ -35,10 +37,10 @@ void main() {
 
   tearDown(() => db.close());
 
-  DeliveryCubit cubit() => DeliveryCubit(
+  DeliveryCubit cubit({LocationService? location}) => DeliveryCubit(
     service,
     evidence,
-    FakeLocationService(),
+    location ?? FakeLocationService(),
     order: sampleOrder,
     onRegistered: (id) async => completed.add(id),
   );
@@ -242,6 +244,15 @@ void main() {
       await delivery.close();
     });
 
+    test('the evidence step looks for the place of the delivery', () async {
+      final delivery = cubit()..scanned(sampleOrder.deliveryId);
+      addTearDown(delivery.close);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(delivery.state.location, const GeoPoint(-12.0464, -77.0428));
+      expect(delivery.state.locating, isFalse);
+    });
+
     test('quantities can be lowered, never raised above the plan', () async {
       final delivery = cubit()
         ..scanned(sampleOrder.deliveryId)
@@ -281,6 +292,59 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('1 · Escaneo ✓'), findsOneWidget);
+  });
+
+  testWidgets('without GPS, A_08 asks before registering without location', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1170, 5000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    late DeliveryCubit delivery;
+    await tester.pumpWidget(
+      localizedApp(
+        DeliveryScreen(
+          order: sampleOrder,
+          createCubit: (_) => delivery = cubit(
+            location: FakeLocationService(
+              const LocationUnavailable(LocationIssue.unavailable),
+            ),
+          ),
+          onNextMission: () {},
+          onOpenTransaction: (_) {},
+          scannerBuilder: (onDetect) => TextButton(
+            onPressed: () => onDetect(sampleOrder.deliveryId),
+            child: const Text('fake-scan'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('fake-scan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sin ubicación GPS'), findsOneWidget);
+
+    await delivery.signed(Uint8List.fromList([1]));
+    await tester.tap(find.text('Foto de recepción'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Registrar entrega'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BottomSheet), findsOneWidget);
+    await tester.tap(find.text('Registrar sin ubicación'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Entrega guardada · se registrará al detectar señal'),
+      findsOneWidget,
+    );
+    expect(
+      (await tester.runAsync(
+        () => records.find(sampleOrder.deliveryId),
+      ))!.location,
+      isNull,
+    );
   });
 
   testWidgets('A_08 goes from scan to the Blockchain seal', (tester) async {

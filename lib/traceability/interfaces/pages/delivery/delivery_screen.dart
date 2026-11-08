@@ -10,6 +10,7 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../shared/interfaces/time_ago.dart';
 import '../../../../shared/interfaces/widgets/app_card.dart';
 import '../../../../shared/interfaces/widgets/bottom_action_area.dart';
+import '../../../../shared/interfaces/widgets/confirm_sheet.dart';
 import '../../../../shared/interfaces/widgets/empty_state.dart';
 import '../../../../shared/interfaces/widgets/screen_header.dart';
 import '../../../../shared/interfaces/widgets/status_chip.dart';
@@ -140,6 +141,10 @@ class _DeliveryView extends StatelessWidget {
                       state: state,
                       editable: state.step == DeliveryStep.evidence,
                     ),
+                    if (state.step == DeliveryStep.evidence) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      _LocationRow(state: state, onRetry: cubit.locate),
+                    ],
                     if (state.record != null) ...[
                       const SizedBox(height: AppSpacing.sm),
                       _BlockchainCard(
@@ -167,7 +172,7 @@ class _DeliveryView extends StatelessWidget {
                     ),
                   FilledButton(
                     onPressed: state.evidenceComplete && !state.submitting
-                        ? cubit.submit
+                        ? () => _register(context, state)
                         : null,
                     child: Text(l10n.actionRegisterDelivery),
                   ),
@@ -198,6 +203,23 @@ class _DeliveryView extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// "Registrar entrega". US-15 asks for the place of the delivery: without
+  /// GPS, the brigadist confirms registering it without coordinates.
+  Future<void> _register(BuildContext context, DeliveryState state) async {
+    final cubit = context.read<DeliveryCubit>();
+    if (state.location == null && !state.locating) {
+      final l10n = AppLocalizations.of(context);
+      final confirmed = await showConfirmSheet(
+        context,
+        title: l10n.deliveryNoLocationTitle,
+        body: l10n.deliveryNoLocationBody,
+        action: l10n.actionRegisterWithoutLocation,
+      );
+      if (!confirmed) return;
+    }
+    await cubit.submit();
   }
 
   Future<void> _typeCode(BuildContext context) async {
@@ -687,6 +709,51 @@ class _BlockchainCard extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Whether A_08 has the place of the delivery (US-15).
+class _LocationRow extends StatelessWidget {
+  const _LocationRow({required this.state, required this.onRetry});
+
+  final DeliveryState state;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final textTheme = Theme.of(context).textTheme;
+    final location = state.location;
+    final (icon, color, text) = location != null
+        ? (
+            Icons.location_on,
+            AppColors.emerald,
+            l10n.deliveryLocationFound(location.format()),
+          )
+        : state.locating
+        ? (
+            Icons.location_searching,
+            AppColors.textSecondary,
+            l10n.deliveryLocating,
+          )
+        : (Icons.location_off, AppColors.coral, l10n.deliveryLocationMissing);
+    return Semantics(
+      liveRegion: true,
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: AppSpacing.xs),
+          Expanded(
+            child: Text(
+              text,
+              style: textTheme.bodyMedium?.copyWith(color: color),
+            ),
+          ),
+          if (location == null && !state.locating)
+            TextButton(onPressed: onRetry, child: Text(l10n.actionRetry)),
+        ],
       ),
     );
   }

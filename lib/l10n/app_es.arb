@@ -518,6 +518,21 @@
   "actionSave": "Guardar",
   "actionRegisterDelivery": "Registrar entrega",
   "deliveryEvidenceMissing": "Falta la firma del beneficiario o la foto de recepción.",
+  "deliveryLocationFound": "Ubicación GPS · {coordinates}",
+  "@deliveryLocationFound": {
+    "description": "A_08: place of the delivery (US-15).",
+    "placeholders": {
+      "coordinates": {
+        "type": "String"
+      }
+    }
+  },
+  "deliveryLocating": "Buscando ubicación GPS…",
+  "deliveryLocationMissing": "Sin ubicación GPS",
+  "deliveryNoLocationTitle": "¿Registrar sin ubicación?",
+  "deliveryNoLocationBody": "No se pudo obtener la ubicación GPS. La entrega quedará registrada sin coordenadas.",
+  "actionRegisterWithoutLocation": "Registrar sin ubicación",
+  "actionRetry": "Reintentar",
   "deliveryQueued": "Entrega guardada · se registrará al detectar señal",
   "deliveryAnchoring": "Registrada · anclando el hash en Blockchain…",
   "deliveryAnchored": "Validado e Inmutable en Blockchain",
