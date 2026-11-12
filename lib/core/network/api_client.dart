@@ -46,8 +46,14 @@ class ApiClient {
 
   final Dio _dio;
 
+  /// The verification of a delivery is public too (US-17): an expired token
+  /// must not turn it into a 401.
+  static final _publicVerification = RegExp(r'^/deliveries/[^/]+/verify$');
+
   static bool _isAnonymous(String path) =>
-      path.startsWith('/public/') || path.startsWith('/auth/');
+      path.startsWith('/public/') ||
+      path.startsWith('/auth/') ||
+      _publicVerification.hasMatch(path);
 
   Future<Either<Failure, T>> get<T>(
     String path, {
@@ -102,6 +108,10 @@ class ApiClient {
       return Left(UnexpectedFailure(error.message));
     } on TypeError catch (error) {
       return Left(UnexpectedFailure(error.toString()));
+    } on StateError catch (error) {
+      // A value the app does not know, such as a new role read with
+      // `firstWhere`: the answer does not follow the contract.
+      return Left(UnexpectedFailure(error.message));
     }
   }
 

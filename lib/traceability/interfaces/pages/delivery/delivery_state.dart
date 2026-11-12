@@ -15,6 +15,9 @@ class DeliveryState extends Equatable {
     this.record,
     this.location,
     this.locating = false,
+    this.verification,
+    this.verifying = false,
+    this.verifyFailure,
   });
 
   final DeliveryOrder order;
@@ -33,6 +36,15 @@ class DeliveryState extends Equatable {
 
   /// The GPS is being asked.
   final bool locating;
+
+  /// Last public verification of the anchored delivery (US-17).
+  final DeliveryVerification? verification;
+
+  /// The verification is being asked.
+  final bool verifying;
+
+  /// Why the last verification could not be done.
+  final Failure? verifyFailure;
 
   bool get evidenceComplete =>
       signaturePath != null &&
@@ -58,6 +70,9 @@ class DeliveryState extends Equatable {
     DeliveryRecord? Function()? record,
     GeoPoint? Function()? location,
     bool? locating,
+    DeliveryVerification? Function()? verification,
+    bool? verifying,
+    Failure? Function()? verifyFailure,
   }) => DeliveryState(
     order: order ?? this.order,
     step: step ?? this.step,
@@ -69,6 +84,9 @@ class DeliveryState extends Equatable {
     record: record != null ? record() : this.record,
     location: location != null ? location() : this.location,
     locating: locating ?? this.locating,
+    verification: verification != null ? verification() : this.verification,
+    verifying: verifying ?? this.verifying,
+    verifyFailure: verifyFailure != null ? verifyFailure() : this.verifyFailure,
   );
 
   @override
@@ -83,5 +101,8 @@ class DeliveryState extends Equatable {
     record,
     location,
     locating,
+    verification,
+    verifying,
+    verifyFailure,
   ];
 }

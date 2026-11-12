@@ -29,7 +29,9 @@ import '../../identityaccess/infrastructure/device/id_card_camera.dart';
 import '../../identityaccess/infrastructure/persistence/secure_profile_repository.dart';
 import '../../identityaccess/infrastructure/persistence/secure_session_repository.dart';
 import '../../identityaccess/interfaces/profile_cubit.dart';
+import '../../networkstorage/application/service_status.dart';
 import '../../networkstorage/application/storage_stats.dart';
+import '../../networkstorage/infrastructure/http_service_health_probe.dart';
 import '../../networkstorage/infrastructure/sqlite_storage_stats.dart';
 import '../../resourcemanagement/application/mission_service.dart';
 import '../../resourcemanagement/domain/repositories/mission_ports.dart';
@@ -183,5 +185,8 @@ Future<void> configureDependencies({AppConfig? config}) async {
     // Red y almacenamiento
     ..registerLazySingleton<StorageStatsSource>(
       () => SqliteStorageStats(database),
+    )
+    ..registerLazySingleton<ServiceHealthProbe>(
+      () => HttpServiceHealthProbe(appConfig),
     );
 }

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/failure.dart';
 import '../../../../core/location/location_service.dart';
 import '../../../../shared/domain/geo_point.dart';
 import '../../../application/delivery_evidence.dart';
@@ -159,6 +160,27 @@ class DeliveryCubit extends Cubit<DeliveryState> {
     await _service.refreshIntegrity(state.order.deliveryId);
   }
 
+  /// "Verificar en Blockchain": compares the stored delivery with the hash
+  /// in the smart contract. Only an anchored delivery has something to
+  /// compare.
+  Future<void> verify() async {
+    if (state.record?.status != DeliveryRecordStatus.anchored ||
+        state.verifying) {
+      return;
+    }
+    emit(state.copyWith(verifying: true, verifyFailure: () => null));
+    final result = await _service.verify(state.order.deliveryId);
+    if (isClosed) return;
+    emit(
+      result.fold(
+        (failure) =>
+            state.copyWith(verifying: false, verifyFailure: () => failure),
+        (verification) =>
+            state.copyWith(verifying: false, verification: () => verification),
+      ),
+    );
+  }
+
   Future<void> _reload() async {
     final record = await _service.find(state.order.deliveryId);
     if (isClosed || record == null) return;
@@ -172,7 +194,10 @@ class DeliveryCubit extends Cubit<DeliveryState> {
   }
 
   void _schedulePolling(DeliveryRecord record) {
-    final waiting = record.status == DeliveryRecordStatus.registered;
+    // The backend retries a failed anchoring, so the device keeps asking.
+    final waiting =
+        record.status == DeliveryRecordStatus.registered ||
+        record.status == DeliveryRecordStatus.anchorFailed;
     if (waiting && _poll == null) {
       _poll = Timer.periodic(pollEvery, (_) => unawaited(refresh()));
     } else if (!waiting) {

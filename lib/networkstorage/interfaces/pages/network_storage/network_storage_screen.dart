@@ -18,6 +18,7 @@ import '../../../../shared/interfaces/widgets/confirm_sheet.dart';
 import '../../../../shared/interfaces/widgets/connectivity_badge.dart';
 import '../../../../shared/interfaces/widgets/section_label.dart';
 import '../../../../shared/interfaces/widgets/sync_channels.dart';
+import '../../../application/service_status.dart';
 import 'network_storage_cubit.dart';
 
 /// A_06 / A_09 · Red y almacenamiento, the settings of both roles.
@@ -71,6 +72,10 @@ class NetworkStorageScreen extends StatelessWidget {
                 SectionLabel(l10n.channelsTitle),
                 const SizedBox(height: AppSpacing.sm),
                 const _ChannelsCard(),
+                const SizedBox(height: AppSpacing.md),
+                SectionLabel(l10n.servicesTitle),
+                const SizedBox(height: AppSpacing.sm),
+                _ServicesCard(status: state.services),
                 const SizedBox(height: AppSpacing.md),
                 SectionLabel(l10n.localDatabase),
                 const SizedBox(height: AppSpacing.sm),
@@ -149,6 +154,106 @@ class _SyncStatusRow extends StatelessWidget {
           ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
         ),
       ],
+    );
+  }
+}
+
+/// Health of the cloud services: tells whether the cloud is up, or still
+/// waking up, before going to the field.
+class _ServicesCard extends StatelessWidget {
+  const _ServicesCard({required this.status});
+
+  final ServiceStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final textTheme = Theme.of(context).textTheme;
+    final checkedAt = status.checkedAt;
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final service in CloudService.values)
+            _ServiceRow(
+              name: switch (service) {
+                CloudService.backend => l10n.serviceBackend,
+                CloudService.aiService => l10n.serviceAi,
+              },
+              health: status.of(service),
+            ),
+          if (checkedAt != null)
+            Text(
+              l10n.servicesCheckedAgo(timeAgo(l10n, checkedAt, DateTime.now())),
+              style: textTheme.bodySmall?.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: status.checking
+                  ? null
+                  : context.read<NetworkStorageCubit>().checkServices,
+              child: Text(l10n.actionCheckServices),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ServiceRow extends StatelessWidget {
+  const _ServiceRow({required this.name, required this.health});
+
+  final String name;
+  final ServiceHealth health;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final (label, color, icon) = switch (health) {
+      ServiceHealth.up => (l10n.serviceUp, AppColors.emerald, Icons.cloud_done),
+      ServiceHealth.down => (
+        l10n.serviceDown,
+        AppColors.coral,
+        Icons.cloud_off,
+      ),
+      ServiceHealth.checking => (
+        l10n.serviceChecking,
+        AppColors.textSecondary,
+        Icons.hourglass_top,
+      ),
+      ServiceHealth.unknown => (
+        l10n.serviceUnknown,
+        AppColors.textSecondary,
+        Icons.cloud_outlined,
+      ),
+    };
+
+    return Semantics(
+      label: '$name: $label',
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(name, style: Theme.of(context).textTheme.titleSmall),
+            ),
+            Text(
+              label,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: color),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

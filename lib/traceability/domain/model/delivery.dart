@@ -192,3 +192,36 @@ final class DeliveryIntegrity extends Equatable {
     anchoredAt,
   ];
 }
+
+/// Public verification of a delivery (US-17): the backend computes the hash
+/// again from the data and evidence stored now and compares it with the one
+/// in the smart contract.
+final class DeliveryVerification extends Equatable {
+  const DeliveryVerification({
+    required this.recordHash,
+    required this.verified,
+    this.anchoredHash,
+    this.transactionHash,
+  });
+
+  /// Hash computed again from what the backend stores now.
+  final String recordHash;
+
+  /// Hash stored in the smart contract; null while not anchored.
+  final String? anchoredHash;
+  final String? transactionHash;
+
+  /// Both hashes match: the delivery was not altered.
+  final bool verified;
+
+  /// Anchored, but the stored data no longer gives the anchored hash.
+  bool get tampered => anchoredHash != null && !verified;
+
+  @override
+  List<Object?> get props => [
+    recordHash,
+    anchoredHash,
+    transactionHash,
+    verified,
+  ];
+}

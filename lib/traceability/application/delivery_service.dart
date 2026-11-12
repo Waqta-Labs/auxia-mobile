@@ -83,6 +83,11 @@ class DeliveryService {
         return Right(updated);
     }
   }
+
+  /// Checks that the anchored delivery was not altered since (US-17). The
+  /// backend reads the smart contract; the device never talks to it.
+  Future<Either<Failure, DeliveryVerification>> verify(String deliveryId) =>
+      _gateway.verify(deliveryId);
 }
 
 /// Sends a queued delivery with its evidence. The backend computes the

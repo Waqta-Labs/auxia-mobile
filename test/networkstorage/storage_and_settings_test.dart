@@ -17,6 +17,7 @@ import 'package:auxia_mobile/identityaccess/domain/model/local_profile.dart';
 import 'package:auxia_mobile/identityaccess/domain/model/user_role.dart';
 import 'package:auxia_mobile/identityaccess/domain/model/valueobjects.dart';
 import 'package:auxia_mobile/identityaccess/interfaces/profile_cubit.dart';
+import 'package:auxia_mobile/networkstorage/application/service_status.dart';
 import 'package:auxia_mobile/networkstorage/infrastructure/sqlite_storage_stats.dart';
 import 'package:auxia_mobile/networkstorage/interfaces/pages/network_storage/network_storage_cubit.dart';
 import 'package:auxia_mobile/networkstorage/interfaces/pages/network_storage/network_storage_screen.dart';
@@ -82,6 +83,43 @@ void main() {
     expect(await store.load(), const Locale('en'));
   });
 
+  group('service health', () {
+    NetworkStorageCubit cubit(ServiceHealthProbe probe) => NetworkStorageCubit(
+      SqliteStorageStats(AppDatabase(db)),
+      dataChanges: const Stream.empty(),
+      loadRegions: () async => const [],
+      healthProbe: probe,
+      clock: () => DateTime(2026, 11, 11, 9),
+    );
+
+    test('every service is checked when the screen opens', () async {
+      final probe = FakeServiceHealthProbe()..down.add(CloudService.aiService);
+      final storage = cubit(probe);
+      addTearDown(storage.close);
+
+      await storage.start();
+      await pumpEventQueue();
+
+      final services = storage.state.services;
+      expect(services.of(CloudService.backend), ServiceHealth.up);
+      expect(services.of(CloudService.aiService), ServiceHealth.down);
+      expect(services.checkedAt, DateTime(2026, 11, 11, 9));
+    });
+
+    test('a failing check is shown as down, never stuck', () async {
+      final storage = cubit(_ThrowingProbe());
+      addTearDown(storage.close);
+
+      await storage.checkServices();
+
+      expect(storage.state.services.checking, isFalse);
+      expect(
+        storage.state.services.of(CloudService.backend),
+        ServiceHealth.down,
+      );
+    });
+  });
+
   group('NetworkStorageScreen (A_06 / A_09)', () {
     late LocaleCubit localeCubit;
 
@@ -89,6 +127,7 @@ void main() {
       WidgetTester tester,
       UserRole role, {
       MeshCubit? mesh,
+      ServiceHealthProbe? probe,
     }) async {
       tester.view.physicalSize = const Size(1170, 6000);
       tester.view.devicePixelRatio = 3;
@@ -122,6 +161,7 @@ void main() {
               create: (_) => NetworkStorageCubit(
                 SqliteStorageStats(AppDatabase(db)),
                 dataChanges: const Stream.empty(),
+                healthProbe: probe,
                 loadRegions: () async => [
                   MapRegion(
                     id: 'zone-1',
@@ -165,6 +205,22 @@ void main() {
       expect(find.text('Reportes locales'), findsOneWidget);
       expect(find.text('Cifrada · OK'), findsOneWidget);
       expect(find.text('Sincronizar ahora'), findsOneWidget);
+    });
+
+    testWidgets('the health of the cloud services is shown', (tester) async {
+      final probe = FakeServiceHealthProbe()..down.add(CloudService.aiService);
+      await pump(tester, UserRole.brigadist, probe: probe);
+
+      expect(find.text('SERVICIOS EN LA NUBE'), findsOneWidget);
+      expect(find.text('Backend AuxIA'), findsOneWidget);
+      expect(find.text('Disponible'), findsOneWidget);
+      expect(find.text('Sin respuesta'), findsOneWidget);
+
+      probe.down.clear();
+      await tester.tap(find.text('Comprobar de nuevo'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Disponible'), findsNWidgets(2));
     });
 
     testWidgets('a brigadist sees the assigned zone and the queues', (
@@ -222,4 +278,10 @@ class _MeshController implements MeshController {
     _state = MeshState(enabled: enabled, peers: enabled ? 2 : 0);
     _states.add(_state);
   }
+}
+
+class _ThrowingProbe implements ServiceHealthProbe {
+  @override
+  Future<bool> isUp(CloudService service) =>
+      Future.error(StateError('probe failed'));
 }

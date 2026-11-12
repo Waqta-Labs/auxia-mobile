@@ -25,6 +25,7 @@ import '../../identityaccess/interfaces/pages/sign_in/sign_in_cubit.dart';
 import '../../identityaccess/interfaces/pages/sign_in/sign_in_screen.dart';
 import '../../identityaccess/interfaces/profile_cubit.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../networkstorage/application/service_status.dart';
 import '../../networkstorage/application/storage_stats.dart';
 import '../../networkstorage/interfaces/pages/network_storage/network_storage_cubit.dart';
 import '../../networkstorage/interfaces/pages/network_storage/network_storage_screen.dart';
@@ -207,6 +208,7 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
                     create: (_) => NetworkStorageCubit(
                       getIt<StorageStatsSource>(),
                       dataChanges: getIt<OutboxRepository>().changes,
+                      healthProbe: getIt<ServiceHealthProbe>(),
                       loadRegions: () => offlineRegions(
                         location: getIt<LocationService>(),
                         myLocationName: myLocation,
@@ -320,6 +322,7 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
                     create: (_) => NetworkStorageCubit(
                       getIt<StorageStatsSource>(),
                       dataChanges: getIt<OutboxRepository>().changes,
+                      healthProbe: getIt<ServiceHealthProbe>(),
                       loadRegions: () => offlineRegions(
                         location: getIt<LocationService>(),
                         myLocationName: myLocation,
