@@ -247,7 +247,7 @@
   "deliveryChain": "Delivery {code} · Warehouse → Brigade → Beneficiary",
   "deliveryHash": "Record hash",
   "deliveryTransaction": "View transaction on Sepolia",
-  "actionVerifyDelivery": "Verify integrity",
+  "actionVerifyIntegrity": "Verify integrity",
   "deliveryVerifying": "Comparing with the hash of the contract on Sepolia…",
   "deliveryVerified": "Integrity verified · it matches the hash anchored on Blockchain",
   "deliveryTampered": "Not verifiable · the current hash does not match the one on Blockchain",

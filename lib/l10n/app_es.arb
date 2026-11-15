@@ -574,7 +574,7 @@
   },
   "deliveryHash": "Hash del registro",
   "deliveryTransaction": "Ver transacción en Sepolia",
-  "actionVerifyDelivery": "Verificar integridad",
+  "actionVerifyIntegrity": "Verificar integridad",
   "deliveryVerifying": "Comparando con el hash del contrato en Sepolia…",
   "deliveryVerified": "Integridad verificada · coincide con el hash anclado en Blockchain",
   "deliveryTampered": "No verificable · el hash actual no coincide con el anclado en Blockchain",

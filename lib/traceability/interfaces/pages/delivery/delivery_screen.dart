@@ -203,7 +203,7 @@ class _DeliveryView extends StatelessWidget {
                     OutlinedButton.icon(
                       onPressed: state.verifying ? null : cubit.verify,
                       icon: const Icon(Icons.fact_check_outlined),
-                      label: Text(l10n.actionVerifyDelivery),
+                      label: Text(l10n.actionVerifyIntegrity),
                     ),
                   FilledButton(
                     onPressed: onNextMission,
