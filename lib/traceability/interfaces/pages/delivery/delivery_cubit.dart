@@ -23,6 +23,7 @@ class DeliveryCubit extends Cubit<DeliveryState> {
     required DeliveryOrder order,
     required this.onRegistered,
     this.pollEvery = const Duration(seconds: 10),
+    this.minVerifying = const Duration(milliseconds: 1200),
   }) : super(DeliveryState(order: order));
 
   final DeliveryService _service;
@@ -32,6 +33,10 @@ class DeliveryCubit extends Cubit<DeliveryState> {
   /// The mission is done on the device once the delivery is saved.
   final Future<void> Function(String deliveryId) onRegistered;
   final Duration pollEvery;
+
+  /// Shortest time "Verificando…" stays on screen: a fast backend answers
+  /// before the brigadist can see that the delivery is being checked.
+  final Duration minVerifying;
 
   StreamSubscription<void>? _changes;
   Timer? _poll;
@@ -169,7 +174,9 @@ class DeliveryCubit extends Cubit<DeliveryState> {
       return;
     }
     emit(state.copyWith(verifying: true, verifyFailure: () => null));
+    final shown = Future<void>.delayed(minVerifying);
     final result = await _service.verify(state.order.deliveryId);
+    await shown;
     if (isClosed) return;
     emit(
       result.fold(

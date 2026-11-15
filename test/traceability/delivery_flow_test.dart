@@ -43,6 +43,7 @@ void main() {
     location ?? FakeLocationService(),
     order: sampleOrder,
     onRegistered: (id) async => completed.add(id),
+    minVerifying: Duration.zero,
   );
 
   group('DeliveryService and handler', () {
@@ -275,6 +276,33 @@ void main() {
       expect(delivery.state.verification!.verified, isTrue);
       expect(delivery.state.verifyFailure, isNull);
     });
+
+    test(
+      'the verification stays visible even when the answer is fast',
+      () async {
+        await records.save(anchoredRecord());
+        final delivery = DeliveryCubit(
+          service,
+          evidence,
+          FakeLocationService(),
+          order: sampleOrder,
+          onRegistered: (_) async {},
+          minVerifying: const Duration(milliseconds: 60),
+        );
+        addTearDown(delivery.close);
+        await delivery.start();
+
+        final verifying = delivery.verify();
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        expect(gateway.verifications, 1);
+        expect(delivery.state.verifying, isTrue);
+        expect(delivery.state.verification, isNull);
+
+        await verifying;
+        expect(delivery.state.verifying, isFalse);
+        expect(delivery.state.verification!.verified, isTrue);
+      },
+    );
 
     test('a changed delivery is reported as tampered', () async {
       gateway.verifyResult = const Right(
