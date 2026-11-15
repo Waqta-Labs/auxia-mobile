@@ -40,6 +40,7 @@ import '../../traceability/application/delivery_service.dart';
 import '../../traceability/infrastructure/device/explorer_launcher.dart';
 import '../../traceability/interfaces/pages/delivery/delivery_cubit.dart';
 import '../../traceability/interfaces/pages/delivery/delivery_screen.dart';
+import '../config/app_config.dart';
 import '../di/service_locator.dart';
 import '../location/location_service.dart';
 import '../sync/outbox_repository.dart';
@@ -282,6 +283,7 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
                   onVerifyDelivery: (mission) =>
                       context.go(AppRoutes.deliveryFor(mission.id)),
                   onNavigate: getIt<NavigationLauncher>().navigateTo,
+                  tileUrlTemplate: getIt<AppConfig>().mapTileUrlTemplate,
                 ),
               ),
             ],

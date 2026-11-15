@@ -66,7 +66,11 @@ class AppHarness {
 
     getIt
       ..registerSingleton<AppConfig>(
-        const AppConfig(apiBaseUrl: 'https://api.test'),
+        // Without map tiles: the widget tests have no network.
+        const AppConfig(
+          apiBaseUrl: 'https://api.test',
+          mapTileUrlTemplate: null,
+        ),
       )
       ..registerSingleton<ProfileService>(profileService)
       ..registerSingleton<AuthService>(auth)
