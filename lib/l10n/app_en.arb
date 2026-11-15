@@ -163,6 +163,7 @@
   "statusRetrying": "Retrying · attempt {attempts}",
   "statusSendFailed": "Could not be sent",
   "statusTransmitting": "Transmitting…",
+  "statusReceived": "Received · awaiting priority",
   "statusPrioritized": "Prioritized by AI · {score}",
   "statusPrioritizedNoScore": "Prioritized by AI",
   "statusBrigade": "Brigade on the way · ETA {minutes} min",

@@ -19,12 +19,14 @@ class MyReportsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final now = DateTime.now();
 
     return Scaffold(
       body: SafeArea(
         child: BlocBuilder<MyReportsCubit, MyReportsState>(
           builder: (context, state) {
+            // Read on every change of the reports: the screen stays alive in
+            // its tab, and the age of each report must not freeze.
+            final now = DateTime.now();
             return RefreshIndicator(
               onRefresh: () => _retry(context),
               child: ListView(

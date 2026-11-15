@@ -328,6 +328,10 @@
     "description": "A_05: the backend refused the report."
   },
   "statusTransmitting": "Transmitiendo…",
+  "statusReceived": "Recibido · esperando prioridad",
+  "@statusReceived": {
+    "description": "A_05: the backend has the report, the AI has not prioritized it yet."
+  },
   "statusPrioritized": "Priorizado por IA · {score}",
   "@statusPrioritized": {
     "placeholders": {
