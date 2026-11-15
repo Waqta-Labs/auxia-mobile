@@ -122,15 +122,18 @@ void main() {
     expect(find.bySemanticsLabel(RegExp('Paso 4 de 4')), findsOneWidget);
   });
 
-  testWidgets('a received report keeps showing transmitting', (tester) async {
+  testWidgets('a received report says it waits for its priority', (
+    tester,
+  ) async {
     await reports.save(
       report('SR-0420', HelpCategory.rescue, CitizenReportStatus.received),
     );
 
     await pump(tester);
 
-    expect(find.text('Transmitiendo…'), findsOneWidget);
-    expect(find.textContaining('Recibido'), findsNothing);
+    expect(find.text('Recibido · esperando prioridad'), findsOneWidget);
+    expect(find.text('Transmitiendo…'), findsNothing);
+    expect(find.bySemanticsLabel(RegExp('Paso 2 de 4')), findsOneWidget);
   });
 
   testWidgets('without eta the brigade label leaves no gap', (tester) async {

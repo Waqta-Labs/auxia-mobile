@@ -30,11 +30,9 @@ import 'sos_widgets.dart';
     l10n.statusTransmitting,
     StatusTone.progress,
   ),
-  // Received but not prioritized yet: still on its way (plan D2).
-  CitizenReportStatus.received => (
-    l10n.statusTransmitting,
-    StatusTone.progress,
-  ),
+  // Received but not prioritized yet: still the second step, but the label
+  // says the Centro de Mando has it, so it does not look stuck on the device.
+  CitizenReportStatus.received => (l10n.statusReceived, StatusTone.progress),
   CitizenReportStatus.prioritized => (
     report.score == null
         ? l10n.statusPrioritizedNoScore
