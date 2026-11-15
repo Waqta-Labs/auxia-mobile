@@ -102,8 +102,9 @@ enum CitizenReportStatus {
   transmitting,
 
   /// Accepted by the backend but not prioritized yet (no zone, or a zone
-  /// without score). The report has no "Recibido" step: it keeps showing
-  /// "Transmitiendo…" and the app keeps asking (plan D2).
+  /// without score). The report has no "Recibido" step: it stays on the
+  /// second one, labelled "Recibido · esperando prioridad", and the app
+  /// keeps asking (plan D2).
   received,
 
   /// Prioritized by the AI ("Priorizado por IA · 94").
