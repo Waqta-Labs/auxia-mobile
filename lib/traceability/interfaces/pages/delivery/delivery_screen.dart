@@ -499,6 +499,7 @@ class _EvidenceRow extends StatelessWidget {
               hint: l10n.deliverySignatureHint,
               path: state.signaturePath ?? state.record?.signaturePath,
               icon: Icons.draw_outlined,
+              wholeImage: true,
               onTap: editable
                   ? () async {
                       final Uint8List? png = await showSignatureSheet(context);
@@ -530,6 +531,7 @@ class _EvidenceTile extends StatelessWidget {
     required this.path,
     required this.icon,
     required this.onTap,
+    this.wholeImage = false,
   });
 
   final String label;
@@ -537,6 +539,10 @@ class _EvidenceTile extends StatelessWidget {
   final String? path;
   final IconData icon;
   final VoidCallback? onTap;
+
+  /// Shows the image complete instead of filling the tile: a cropped
+  /// signature loses strokes, a cropped photo does not matter.
+  final bool wholeImage;
 
   @override
   Widget build(BuildContext context) {
@@ -555,7 +561,12 @@ class _EvidenceTile extends StatelessWidget {
             child: SizedBox(
               height: 72,
               child: file != null && file.existsSync()
-                  ? Image.file(file, fit: BoxFit.cover)
+                  ? wholeImage
+                        ? ColoredBox(
+                            color: AppColors.white,
+                            child: Image.file(file, fit: BoxFit.contain),
+                          )
+                        : Image.file(file, fit: BoxFit.cover)
                   : ColoredBox(
                       color: AppColors.royalContainer,
                       child: Icon(icon, color: AppColors.white, size: 32),
