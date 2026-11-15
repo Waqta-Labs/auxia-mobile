@@ -42,10 +42,9 @@ class NetworkStorageCubit extends Cubit<NetworkStorageState> {
     this._stats, {
     required this.loadRegions,
     required this._dataChanges,
-    ServiceHealthProbe? healthProbe,
+    this._healthProbe,
     DateTime Function()? clock,
-  }) : _healthProbe = healthProbe,
-       _clock = clock ?? DateTime.now,
+  }) : _clock = clock ?? DateTime.now,
        super(const NetworkStorageState());
 
   final StorageStatsSource _stats;
