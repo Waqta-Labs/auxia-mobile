@@ -9,6 +9,7 @@ class AppConfig {
   const AppConfig({
     required this.apiBaseUrl,
     this.aiServiceUrl = defaultAiServiceUrl,
+    this.mapTileUrlTemplate = defaultMapTileUrlTemplate,
     this.apiPrefix = '/api/v1',
     this.connectTimeout = const Duration(seconds: 15),
     // A verification rereads the evidence from storage: on the Azure backend
@@ -27,6 +28,10 @@ class AppConfig {
       'AI_SERVICE_URL',
       defaultValue: defaultAiServiceUrl,
     ),
+    mapTileUrlTemplate: String.fromEnvironment(
+      'MAP_TILE_URL',
+      defaultValue: defaultMapTileUrlTemplate,
+    ),
   );
 
   static const String defaultApiBaseUrl =
@@ -35,11 +40,19 @@ class AppConfig {
   static const String defaultAiServiceUrl =
       'https://auxia-ai-service.azurewebsites.net';
 
+  /// Standard tiles of OpenStreetMap, which need no API key. Attribution is
+  /// shown on the map.
+  static const String defaultMapTileUrlTemplate =
+      'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
   final String apiBaseUrl;
 
   /// AI Service, only for its public health check: its key belongs to the
   /// backend and never reaches the device.
   final String aiServiceUrl;
+
+  /// Raster tiles of the missions map; null draws the map without them.
+  final String? mapTileUrlTemplate;
   final String apiPrefix;
   final Duration connectTimeout;
   final Duration receiveTimeout;

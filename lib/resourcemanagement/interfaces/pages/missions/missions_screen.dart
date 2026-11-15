@@ -27,7 +27,11 @@ class MissionsScreen extends StatelessWidget {
     required this.createCubit,
     required this.onVerifyDelivery,
     required this.onNavigate,
+    this.tileUrlTemplate,
   });
+
+  /// Raster tiles of the map; null draws it without them.
+  final String? tileUrlTemplate;
 
   /// Opens A_10.
   final VoidCallback onSignIn;
@@ -109,6 +113,7 @@ class MissionsScreen extends StatelessWidget {
       child: _MissionsView(
         onVerifyDelivery: onVerifyDelivery,
         onNavigate: onNavigate,
+        tileUrlTemplate: tileUrlTemplate,
       ),
     );
   }
@@ -118,7 +123,10 @@ class _MissionsView extends StatelessWidget {
   const _MissionsView({
     required this.onVerifyDelivery,
     required this.onNavigate,
+    required this.tileUrlTemplate,
   });
+
+  final String? tileUrlTemplate;
 
   final void Function(Mission mission) onVerifyDelivery;
   final Future<bool> Function(GeoPoint destination) onNavigate;
@@ -156,6 +164,7 @@ class _MissionsView extends StatelessWidget {
                 activeMission: state.activeMission,
                 myLocation: state.myLocation,
                 overlayLabel: l10n.missionsOnMap(state.openMissions.length),
+                tileUrlTemplate: tileUrlTemplate,
               ),
             ),
             const SizedBox(height: AppSpacing.md),
