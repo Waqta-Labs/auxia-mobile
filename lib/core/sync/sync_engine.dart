@@ -133,6 +133,9 @@ class SyncEngine implements SyncController {
   Timer? _timer;
   Future<void>? _running;
 
+  /// A sync was asked while a run was going on.
+  bool _runAgain = false;
+
   @override
   SyncState get state => _state;
 
@@ -172,11 +175,25 @@ class SyncEngine implements SyncController {
     await syncNow();
   }
 
-  /// Sends the due writes. Concurrent calls share the same run.
+  /// Sends the due writes. Concurrent calls share the same run, and a call
+  /// during a run asks for one more: the writes queued meanwhile were not in
+  /// it and must not wait for the next minute (R-02: under 30 s).
   @override
-  Future<void> syncNow() => _running ??= _run().whenComplete(() {
-    _running = null;
-  });
+  Future<void> syncNow() {
+    final running = _running;
+    if (running != null) {
+      _runAgain = true;
+      return running;
+    }
+    return _running = _runWhileAsked().whenComplete(() => _running = null);
+  }
+
+  Future<void> _runWhileAsked() async {
+    do {
+      _runAgain = false;
+      await _run();
+    } while (_runAgain);
+  }
 
   /// The brigadist signed in again: queued writes can be retried.
   @override
@@ -192,22 +209,26 @@ class SyncEngine implements SyncController {
 
     _emit(_state.copyWith(running: true, total: due.length, done: 0));
     var reachedBackend = false;
-    for (final item in due) {
-      final outcome = await _send(item);
-      if (outcome != _Outcome.offline) reachedBackend = true;
-      _emit(_state.copyWith(done: _state.done + 1));
-      if (outcome == _Outcome.offline || outcome == _Outcome.unauthorized) {
-        break;
+    try {
+      for (final item in due) {
+        final outcome = await _send(item);
+        if (outcome != _Outcome.offline) reachedBackend = true;
+        _emit(_state.copyWith(done: _state.done + 1));
+        if (outcome == _Outcome.offline || outcome == _Outcome.unauthorized) {
+          break;
+        }
       }
+    } finally {
+      // Even after an unexpected error the progress bar must stop.
+      final pending = await _outbox.countUnsent();
+      _emit(
+        _state.copyWith(
+          running: false,
+          pending: pending,
+          lastSyncAt: reachedBackend ? _clock() : null,
+        ),
+      );
     }
-    final pending = await _outbox.countUnsent();
-    _emit(
-      _state.copyWith(
-        running: false,
-        pending: pending,
-        lastSyncAt: reachedBackend ? _clock() : null,
-      ),
-    );
   }
 
   Future<_Outcome> _send(OutboxItem item) async {
@@ -226,6 +247,12 @@ class SyncEngine implements SyncController {
     } on Exception catch (error) {
       await _retryLater(item, '$error');
       return _Outcome.retry;
+    } on Error catch (error) {
+      // A bug in a handler (for example, a payload of another version) must
+      // not leave the write in `sending` until the app restarts. It goes
+      // back to the queue and the error still reaches the error reporting.
+      await _retryLater(item, '$error');
+      rethrow;
     }
 
     switch (result) {

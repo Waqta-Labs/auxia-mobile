@@ -151,6 +151,12 @@ class _DeliveryView extends StatelessWidget {
                         record: state.record!,
                         onOpenTransaction: onOpenTransaction,
                       ),
+                      if (state.verifying ||
+                          state.verification != null ||
+                          state.verifyFailure != null) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        _VerificationCard(state: state),
+                      ],
                     ],
                   ],
                 ],
@@ -187,10 +193,17 @@ class _DeliveryView extends StatelessWidget {
                       onPressed: cubit.correct,
                       child: Text(l10n.actionCorrectDelivery),
                     ),
-                  if (state.record?.status == DeliveryRecordStatus.registered)
+                  if (state.record?.status == DeliveryRecordStatus.registered ||
+                      state.record?.status == DeliveryRecordStatus.anchorFailed)
                     OutlinedButton(
                       onPressed: cubit.refresh,
                       child: Text(l10n.actionRefreshStatus),
+                    ),
+                  if (state.record?.status == DeliveryRecordStatus.anchored)
+                    OutlinedButton.icon(
+                      onPressed: state.verifying ? null : cubit.verify,
+                      icon: const Icon(Icons.fact_check_outlined),
+                      label: Text(l10n.actionVerifyIntegrity),
                     ),
                   FilledButton(
                     onPressed: onNextMission,
@@ -486,6 +499,7 @@ class _EvidenceRow extends StatelessWidget {
               hint: l10n.deliverySignatureHint,
               path: state.signaturePath ?? state.record?.signaturePath,
               icon: Icons.draw_outlined,
+              wholeImage: true,
               onTap: editable
                   ? () async {
                       final Uint8List? png = await showSignatureSheet(context);
@@ -517,6 +531,7 @@ class _EvidenceTile extends StatelessWidget {
     required this.path,
     required this.icon,
     required this.onTap,
+    this.wholeImage = false,
   });
 
   final String label;
@@ -524,6 +539,10 @@ class _EvidenceTile extends StatelessWidget {
   final String? path;
   final IconData icon;
   final VoidCallback? onTap;
+
+  /// Shows the image complete instead of filling the tile: a cropped
+  /// signature loses strokes, a cropped photo does not matter.
+  final bool wholeImage;
 
   @override
   Widget build(BuildContext context) {
@@ -542,7 +561,12 @@ class _EvidenceTile extends StatelessWidget {
             child: SizedBox(
               height: 72,
               child: file != null && file.existsSync()
-                  ? Image.file(file, fit: BoxFit.cover)
+                  ? wholeImage
+                        ? ColoredBox(
+                            color: AppColors.white,
+                            child: Image.file(file, fit: BoxFit.contain),
+                          )
+                        : Image.file(file, fit: BoxFit.cover)
                   : ColoredBox(
                       color: AppColors.royalContainer,
                       child: Icon(icon, color: AppColors.white, size: 32),
@@ -707,6 +731,69 @@ class _BlockchainCard extends StatelessWidget {
                 icon: const Icon(Icons.open_in_new, size: 18),
                 label: Text(l10n.deliveryTransaction),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Result of the public verification (US-17): the stored delivery against
+/// the hash in the smart contract.
+class _VerificationCard extends StatelessWidget {
+  const _VerificationCard({required this.state});
+
+  final DeliveryState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final verification = state.verification;
+
+    final (message, color, icon) = switch (verification) {
+      _ when state.verifying => (
+        l10n.deliveryVerifying,
+        AppColors.textSecondary,
+        Icons.hourglass_top,
+      ),
+      _ when state.verifyFailure != null => (
+        l10n.deliveryVerifyFailed,
+        AppColors.coral,
+        Icons.cloud_off,
+      ),
+      DeliveryVerification(verified: true) => (
+        l10n.deliveryVerified,
+        AppColors.emerald,
+        Icons.verified_user,
+      ),
+      DeliveryVerification(tampered: true) => (
+        l10n.deliveryTampered,
+        AppColors.coral,
+        Icons.gpp_bad,
+      ),
+      _ => (
+        l10n.deliveryNotAnchoredYet,
+        AppColors.textSecondary,
+        Icons.hourglass_empty,
+      ),
+    };
+
+    return Semantics(
+      liveRegion: true,
+      child: AppCard(
+        tone: AppCardTone.deep,
+        child: Row(
+          children: [
+            Icon(icon, color: color),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                message,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: color),
+              ),
+            ),
           ],
         ),
       ),

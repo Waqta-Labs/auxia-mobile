@@ -18,6 +18,7 @@ import 'package:auxia_mobile/identityaccess/domain/model/session.dart';
 import 'package:auxia_mobile/identityaccess/domain/repositories/profile_repository.dart';
 import 'package:auxia_mobile/identityaccess/domain/repositories/session_repository.dart';
 import 'package:auxia_mobile/l10n/generated/app_localizations.dart';
+import 'package:auxia_mobile/networkstorage/application/service_status.dart';
 import 'package:auxia_mobile/resourcemanagement/domain/model/mission.dart';
 import 'package:auxia_mobile/resourcemanagement/domain/repositories/mission_ports.dart';
 import 'package:auxia_mobile/shared/domain/geo_point.dart';
@@ -411,9 +412,26 @@ class FakeDeliveryGateway implements DeliveryGateway {
     return registerResult;
   }
 
+  Either<Failure, DeliveryVerification> verifyResult = const Right(
+    DeliveryVerification(
+      recordHash:
+          'ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56c91e',
+      anchoredHash:
+          'ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56c91e',
+      verified: true,
+    ),
+  );
+  int verifications = 0;
+
   @override
   Future<Either<Failure, DeliveryIntegrity>> integrity(String id) async =>
       integrityResult;
+
+  @override
+  Future<Either<Failure, DeliveryVerification>> verify(String id) async {
+    verifications++;
+    return verifyResult;
+  }
 }
 
 /// Order of the sample mission.
@@ -431,3 +449,15 @@ const sampleOrder = DeliveryOrder(
     ),
   ],
 );
+
+/// Health checks with scripted answers; every service is up by default.
+class FakeServiceHealthProbe implements ServiceHealthProbe {
+  final Set<CloudService> down = {};
+  int checks = 0;
+
+  @override
+  Future<bool> isUp(CloudService service) async {
+    checks++;
+    return !down.contains(service);
+  }
+}

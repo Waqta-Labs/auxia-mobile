@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auxia_mobile/core/failure.dart';
 import 'package:auxia_mobile/core/sync/outbox_item.dart';
 import 'package:auxia_mobile/core/sync/outbox_repository.dart';
@@ -22,6 +24,23 @@ class _ScriptedHandler implements OutboxHandler {
   Future<Either<Failure, Unit>> send(OutboxItem item) async {
     sent.add(item.id);
     return results.isEmpty ? const Right(unit) : results.removeAt(0);
+  }
+}
+
+/// Handler that runs [onSend] for every write.
+class _CallbackHandler implements OutboxHandler {
+  _CallbackHandler(this.onSend);
+
+  final Future<Either<Failure, Unit>> Function(OutboxItem item) onSend;
+  final List<String> sent = [];
+
+  @override
+  String get type => 'citizen_report';
+
+  @override
+  Future<Either<Failure, Unit>> send(OutboxItem item) {
+    sent.add(item.id);
+    return onSend(item);
   }
 }
 
@@ -100,6 +119,53 @@ void main() {
     await sync.syncNow();
     expect(handler.sent, ['a', 'a']);
     expect((await outbox.find('a'))!.status, OutboxStatus.sent);
+  });
+
+  test('a write queued during a run is sent in the same sync', () async {
+    late SyncEngine sync;
+    final handler = _CallbackHandler((item) async {
+      if (item.id == 'a') {
+        await outbox.enqueue(
+          type: 'citizen_report',
+          payload: const {},
+          id: 'b',
+        );
+        // What the outbox listener does after every write.
+        await Future<void>.delayed(Duration.zero);
+        unawaited(sync.syncNow());
+      }
+      return const Right(unit);
+    });
+    sync = SyncEngine(
+      outbox: outbox,
+      connectivity: network,
+      handlers: [handler],
+      clock: () => now,
+    );
+    await outbox.enqueue(type: 'citizen_report', payload: const {}, id: 'a');
+
+    await sync.syncNow();
+
+    expect(handler.sent, ['a', 'b']);
+    expect((await outbox.find('b'))!.status, OutboxStatus.sent);
+  });
+
+  test('a bug in a handler requeues the write and stops the bar', () async {
+    final handler = _CallbackHandler((_) async => throw StateError('bug'));
+    final sync = SyncEngine(
+      outbox: outbox,
+      connectivity: network,
+      handlers: [handler],
+      clock: () => now,
+    );
+    await outbox.enqueue(type: 'citizen_report', payload: const {}, id: 'a');
+
+    await expectLater(sync.syncNow(), throwsStateError);
+
+    final item = (await outbox.find('a'))!;
+    expect(item.status, OutboxStatus.pending);
+    expect(item.attempts, 1);
+    expect(sync.state.running, isFalse);
   });
 
   test('a rejected write is not retried', () async {

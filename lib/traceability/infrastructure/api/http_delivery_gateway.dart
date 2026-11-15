@@ -41,7 +41,23 @@ class HttpDeliveryGateway implements DeliveryGateway {
         '/deliveries/$deliveryId',
         parse: (data) => integrityFromJson(data! as Map<String, Object?>),
       );
+
+  @override
+  Future<Either<Failure, DeliveryVerification>> verify(String deliveryId) =>
+      _client.get(
+        '/deliveries/$deliveryId/verify',
+        parse: (data) => verificationFromJson(data! as Map<String, Object?>),
+      );
 }
+
+/// Reads a `VerificationResource`.
+DeliveryVerification verificationFromJson(Map<String, Object?> json) =>
+    DeliveryVerification(
+      recordHash: json['recordHash']! as String,
+      anchoredHash: json['anchoredHash'] as String?,
+      transactionHash: json['transactionHash'] as String?,
+      verified: json['verified']! as bool,
+    );
 
 /// Body of `POST /deliveries/{id}/registration`: the `delivery` part as JSON
 /// with its own content type (without it the API answers 415) and the

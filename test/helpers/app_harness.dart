@@ -15,6 +15,7 @@ import 'package:auxia_mobile/identityaccess/application/auth_service.dart';
 import 'package:auxia_mobile/identityaccess/application/profile_service.dart';
 import 'package:auxia_mobile/identityaccess/infrastructure/device/id_card_camera.dart';
 import 'package:auxia_mobile/identityaccess/interfaces/profile_cubit.dart';
+import 'package:auxia_mobile/networkstorage/application/service_status.dart';
 import 'package:auxia_mobile/networkstorage/application/storage_stats.dart';
 import 'package:auxia_mobile/networkstorage/infrastructure/sqlite_storage_stats.dart';
 import 'package:auxia_mobile/resourcemanagement/application/mission_service.dart';
@@ -65,7 +66,11 @@ class AppHarness {
 
     getIt
       ..registerSingleton<AppConfig>(
-        const AppConfig(apiBaseUrl: 'https://api.test'),
+        // Without map tiles: the widget tests have no network.
+        const AppConfig(
+          apiBaseUrl: 'https://api.test',
+          mapTileUrlTemplate: null,
+        ),
       )
       ..registerSingleton<ProfileService>(profileService)
       ..registerSingleton<AuthService>(auth)
@@ -93,7 +98,8 @@ class AppHarness {
       ..registerSingleton<ExplorerLauncher>(ExplorerLauncher())
       ..registerSingleton<StorageStatsSource>(
         SqliteStorageStats(AppDatabase(db)),
-      );
+      )
+      ..registerSingleton<ServiceHealthProbe>(FakeServiceHealthProbe());
     return harness;
   }
 

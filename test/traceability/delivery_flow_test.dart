@@ -43,6 +43,7 @@ void main() {
     location ?? FakeLocationService(),
     order: sampleOrder,
     onRegistered: (id) async => completed.add(id),
+    minVerifying: Duration.zero,
   );
 
   group('DeliveryService and handler', () {
@@ -253,6 +254,139 @@ void main() {
       expect(delivery.state.locating, isFalse);
     });
 
+    DeliveryRecord anchoredRecord() => DeliveryRecord(
+      order: sampleOrder,
+      deliveredAt: DateTime(2026, 11, 8, 10),
+      signaturePath: '/s.png',
+      photoPath: '/p.jpg',
+      status: DeliveryRecordStatus.anchored,
+      recordHash: 'abc',
+    );
+
+    test('an anchored delivery is verified against the contract', () async {
+      await records.save(anchoredRecord());
+      final delivery = cubit();
+      addTearDown(delivery.close);
+      await delivery.start();
+
+      await delivery.verify();
+
+      expect(gateway.verifications, 1);
+      expect(delivery.state.verifying, isFalse);
+      expect(delivery.state.verification!.verified, isTrue);
+      expect(delivery.state.verifyFailure, isNull);
+    });
+
+    test(
+      'the verification stays visible even when the answer is fast',
+      () async {
+        await records.save(anchoredRecord());
+        final delivery = DeliveryCubit(
+          service,
+          evidence,
+          FakeLocationService(),
+          order: sampleOrder,
+          onRegistered: (_) async {},
+          minVerifying: const Duration(milliseconds: 60),
+        );
+        addTearDown(delivery.close);
+        await delivery.start();
+
+        final verifying = delivery.verify();
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        expect(gateway.verifications, 1);
+        expect(delivery.state.verifying, isTrue);
+        expect(delivery.state.verification, isNull);
+
+        await verifying;
+        expect(delivery.state.verifying, isFalse);
+        expect(delivery.state.verification!.verified, isTrue);
+      },
+    );
+
+    test('a changed delivery is reported as tampered', () async {
+      gateway.verifyResult = const Right(
+        DeliveryVerification(
+          recordHash: 'new',
+          anchoredHash: 'old',
+          verified: false,
+        ),
+      );
+      await records.save(anchoredRecord());
+      final delivery = cubit();
+      addTearDown(delivery.close);
+      await delivery.start();
+
+      await delivery.verify();
+
+      expect(delivery.state.verification!.tampered, isTrue);
+    });
+
+    test('a verification without signal can be retried', () async {
+      gateway.verifyResult = const Left(NetworkFailure());
+      await records.save(anchoredRecord());
+      final delivery = cubit();
+      addTearDown(delivery.close);
+      await delivery.start();
+
+      await delivery.verify();
+      expect(delivery.state.verifyFailure, isA<NetworkFailure>());
+
+      gateway.verifyResult = const Right(
+        DeliveryVerification(
+          recordHash: 'a',
+          anchoredHash: 'a',
+          verified: true,
+        ),
+      );
+      await delivery.verify();
+      expect(delivery.state.verifyFailure, isNull);
+      expect(delivery.state.verification!.verified, isTrue);
+    });
+
+    test('a failed anchoring is asked again until it is anchored', () async {
+      await records.save(
+        anchoredRecord().withIntegrity(
+          const DeliveryIntegrity(anchorStatus: AnchorStatus.failed),
+        ),
+      );
+      final delivery = DeliveryCubit(
+        service,
+        evidence,
+        FakeLocationService(),
+        order: sampleOrder,
+        onRegistered: (_) async {},
+        pollEvery: const Duration(milliseconds: 10),
+      );
+      addTearDown(delivery.close);
+      await delivery.start();
+      expect(delivery.state.record!.status, DeliveryRecordStatus.anchorFailed);
+
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(delivery.state.record!.status, DeliveryRecordStatus.anchored);
+    });
+
+    test('a delivery not anchored yet is not verified', () async {
+      await records.save(
+        DeliveryRecord(
+          order: sampleOrder,
+          deliveredAt: DateTime(2026, 11, 8, 10),
+          signaturePath: '/s.png',
+          photoPath: '/p.jpg',
+          status: DeliveryRecordStatus.queued,
+        ),
+      );
+      final delivery = cubit();
+      addTearDown(delivery.close);
+      await delivery.start();
+
+      await delivery.verify();
+
+      expect(gateway.verifications, 0);
+      expect(delivery.state.verification, isNull);
+    });
+
     test('quantities can be lowered, never raised above the plan', () async {
       final delivery = cubit()
         ..scanned(sampleOrder.deliveryId)
@@ -398,5 +532,15 @@ void main() {
     expect(find.text('0x7f3a…c91e'), findsOneWidget);
     expect(find.text('3 · Blockchain ✓'), findsOneWidget);
     expect(find.text('Siguiente misión'), findsOneWidget);
+
+    await tester.tap(find.text('Verificar integridad'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Integridad verificada · coincide con el hash anclado en Blockchain',
+      ),
+      findsOneWidget,
+    );
   });
 }

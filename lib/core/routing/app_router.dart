@@ -25,6 +25,7 @@ import '../../identityaccess/interfaces/pages/sign_in/sign_in_cubit.dart';
 import '../../identityaccess/interfaces/pages/sign_in/sign_in_screen.dart';
 import '../../identityaccess/interfaces/profile_cubit.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../networkstorage/application/service_status.dart';
 import '../../networkstorage/application/storage_stats.dart';
 import '../../networkstorage/interfaces/pages/network_storage/network_storage_cubit.dart';
 import '../../networkstorage/interfaces/pages/network_storage/network_storage_screen.dart';
@@ -39,6 +40,7 @@ import '../../traceability/application/delivery_service.dart';
 import '../../traceability/infrastructure/device/explorer_launcher.dart';
 import '../../traceability/interfaces/pages/delivery/delivery_cubit.dart';
 import '../../traceability/interfaces/pages/delivery/delivery_screen.dart';
+import '../config/app_config.dart';
 import '../di/service_locator.dart';
 import '../location/location_service.dart';
 import '../sync/outbox_repository.dart';
@@ -207,6 +209,7 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
                     create: (_) => NetworkStorageCubit(
                       getIt<StorageStatsSource>(),
                       dataChanges: getIt<OutboxRepository>().changes,
+                      healthProbe: getIt<ServiceHealthProbe>(),
                       loadRegions: () => offlineRegions(
                         location: getIt<LocationService>(),
                         myLocationName: myLocation,
@@ -280,6 +283,7 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
                   onVerifyDelivery: (mission) =>
                       context.go(AppRoutes.deliveryFor(mission.id)),
                   onNavigate: getIt<NavigationLauncher>().navigateTo,
+                  tileUrlTemplate: getIt<AppConfig>().mapTileUrlTemplate,
                 ),
               ),
             ],
@@ -320,6 +324,7 @@ GoRouter createAppRouter({required ProfileCubit profileCubit}) {
                     create: (_) => NetworkStorageCubit(
                       getIt<StorageStatsSource>(),
                       dataChanges: getIt<OutboxRepository>().changes,
+                      healthProbe: getIt<ServiceHealthProbe>(),
                       loadRegions: () => offlineRegions(
                         location: getIt<LocationService>(),
                         myLocationName: myLocation,

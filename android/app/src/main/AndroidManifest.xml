@@ -11,6 +11,17 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Haptic confirmation of the SOS, the QR scan and the blockchain seal. -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Mesh (plan D5): Nearby Connections over Bluetooth and Wi-Fi. Without
+         them in the manifest, permission_handler answers "denied" on
+         Android 12+ without asking, and Mesh never turns on. -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <!-- Lets url_launcher open the maps app for the mission navigation. -->
     <queries>
         <intent>

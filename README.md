@@ -66,6 +66,9 @@ Android emulator:
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8080
 ```
 
+The settings screen checks the health of the backend and of the AI Service.
+`AI_SERVICE_URL` changes the address of the AI Service the same way.
+
 ## Verify
 
 ```bash

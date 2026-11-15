@@ -105,6 +105,42 @@ void main() {
     expect(adapter.requests.single.headers['Authorization'], 'Bearer t');
   });
 
+  test('the public verification is read without the session', () async {
+    final adapter = FakeHttpAdapter({
+      'GET /api/v1/deliveries/${sampleOrder.deliveryId}/verify': (
+        200,
+        {
+          'deliveryId': sampleOrder.deliveryId,
+          'recordHash': 'abc',
+          'anchoredHash': 'abc',
+          'transactionHash': '0x7f3a',
+          'verified': true,
+        },
+      ),
+    });
+    final gateway = HttpDeliveryGateway(fakeApiClient(adapter, token: 't'));
+
+    final result = await gateway.verify(sampleOrder.deliveryId);
+
+    final verification = result.getRight().toNullable()!;
+    expect(verification.verified, isTrue);
+    expect(verification.tampered, isFalse);
+    expect(verification.transactionHash, '0x7f3a');
+    expect(adapter.requests.single.headers['Authorization'], isNull);
+  });
+
+  test('a delivery not anchored yet is neither verified nor tampered', () {
+    final verification = verificationFromJson({
+      'recordHash': 'abc',
+      'anchoredHash': null,
+      'transactionHash': null,
+      'verified': false,
+    });
+
+    expect(verification.verified, isFalse);
+    expect(verification.tampered, isFalse);
+  });
+
   test('a quantity above the plan is a rejected registration', () async {
     final adapter = FakeHttpAdapter({
       'POST /api/v1/deliveries/${sampleOrder.deliveryId}/registration': (

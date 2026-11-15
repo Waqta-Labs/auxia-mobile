@@ -26,8 +26,9 @@ Color glowColor(double? score) =>
 /// Urgency Score around each mission, numbered markers, the position of the
 /// brigadist and the dashed route to the active mission.
 ///
-/// It is drawn on the device from the coordinates of the missions, with no
-/// map tile server, so it works the same without signal.
+/// The grid is drawn on the device from the coordinates of the missions, so
+/// the map works without signal. With signal, the streets of OpenStreetMap
+/// are drawn over it.
 class MissionsMap extends StatefulWidget {
   const MissionsMap({
     super.key,
@@ -35,7 +36,11 @@ class MissionsMap extends StatefulWidget {
     required this.activeMission,
     required this.myLocation,
     required this.overlayLabel,
+    this.tileUrlTemplate,
   });
+
+  /// Raster tiles; null leaves only the grid (tests).
+  final String? tileUrlTemplate;
 
   final List<Mission> missions;
   final Mission? activeMission;
@@ -135,6 +140,13 @@ class _MissionsMapState extends State<MissionsMap> {
               mapController: _controller,
               options: _options,
               children: [
+                if (widget.tileUrlTemplate != null)
+                  TileLayer(
+                    urlTemplate: widget.tileUrlTemplate,
+                    userAgentPackageName: 'com.waqtalabs.auxia_mobile',
+                    // Dark, as the rest of the app and the A_07 mockup.
+                    tileBuilder: darkModeTileBuilder,
+                  ),
                 MarkerLayer(
                   markers: [
                     for (final mission in widget.missions)
@@ -197,6 +209,12 @@ class _MissionsMapState extends State<MissionsMap> {
                 ),
               ],
             ),
+            if (widget.tileUrlTemplate != null)
+              const Positioned(
+                left: AppSpacing.sm,
+                bottom: AppSpacing.sm,
+                child: _Attribution(),
+              ),
             Positioned(
               top: AppSpacing.sm,
               left: AppSpacing.sm,
@@ -302,6 +320,29 @@ class _ScoreMarker extends StatelessWidget {
             fontWeight: FontWeight.w800,
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Credit that the tiles of OpenStreetMap require on the map.
+class _Attribution extends StatelessWidget {
+  const _Attribution();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xxs,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Text(
+        '© OpenStreetMap',
+        style: Theme.of(context).textTheme.labelSmall,
       ),
     );
   }

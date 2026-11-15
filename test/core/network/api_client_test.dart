@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:auxia_mobile/core/config/app_config.dart';
 import 'package:auxia_mobile/core/failure.dart';
 import 'package:auxia_mobile/core/network/api_client.dart';
+import 'package:auxia_mobile/identityaccess/domain/model/session.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -116,6 +117,19 @@ void main() {
       'items[0].quantity': 'must be at most 50',
     });
     expect(failure.isRetryable, isFalse);
+  });
+
+  test('an unknown value in the answer is an unexpected failure', () async {
+    final adapter = _FakeAdapter(body: {'role': 'PLATFORM_OPERATOR'});
+
+    final result = await _client(adapter).get(
+      '/users/me',
+      parse: (data) => AccountRole.fromCode(
+        (data! as Map<String, Object?>)['role']! as String,
+      ),
+    );
+
+    expect(result.getLeft().toNullable(), isA<UnexpectedFailure>());
   });
 
   test('maps 401 to an unauthorized failure', () async {

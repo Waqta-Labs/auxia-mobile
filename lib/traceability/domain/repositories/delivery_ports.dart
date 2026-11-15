@@ -23,4 +23,8 @@ abstract interface class DeliveryGateway {
 
   /// `GET /deliveries/{id}`: anchoring status and hashes.
   Future<Either<Failure, DeliveryIntegrity>> integrity(String deliveryId);
+
+  /// `GET /deliveries/{id}/verify`, public: compares the hash of the stored
+  /// delivery with the one anchored in the smart contract.
+  Future<Either<Failure, DeliveryVerification>> verify(String deliveryId);
 }

@@ -574,6 +574,12 @@
   },
   "deliveryHash": "Hash del registro",
   "deliveryTransaction": "Ver transacción en Sepolia",
+  "actionVerifyIntegrity": "Verificar integridad",
+  "deliveryVerifying": "Comparando con el hash del contrato en Sepolia…",
+  "deliveryVerified": "Integridad verificada · coincide con el hash anclado en Blockchain",
+  "deliveryTampered": "No verificable · el hash actual no coincide con el anclado en Blockchain",
+  "deliveryNotAnchoredYet": "Pendiente de verificación · aún no hay un hash anclado en Blockchain",
+  "deliveryVerifyFailed": "No se pudo verificar ahora. Inténtalo de nuevo en un momento.",
   "deliveryAnchoredAgo": "Anclado {ago}",
   "@deliveryAnchoredAgo": {
     "placeholders": {
@@ -615,6 +621,22 @@
   "statLocalMissions": "Misiones locales",
   "statEvidenceToUpload": "Evidencias por subir",
   "statBlockchainQueue": "Tx Blockchain en cola",
+  "servicesTitle": "Servicios en la nube",
+  "serviceBackend": "Backend AuxIA",
+  "serviceAi": "Servicio de IA",
+  "serviceUp": "Disponible",
+  "serviceDown": "Sin respuesta",
+  "serviceChecking": "Comprobando…",
+  "serviceUnknown": "Sin comprobar",
+  "servicesCheckedAgo": "Comprobado {ago}",
+  "@servicesCheckedAgo": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
+  "actionCheckServices": "Comprobar de nuevo",
   "languageTitle": "Idioma",
   "languageSpanish": "Español",
   "languageEnglish": "English"
