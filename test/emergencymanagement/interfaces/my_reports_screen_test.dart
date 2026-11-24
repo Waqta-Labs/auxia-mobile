@@ -32,6 +32,7 @@ void main() {
     CitizenReportStatus status, {
     double? score,
     int? eta,
+    DateTime? acceptedAt,
   }) => CitizenReport(
     id: code,
     code: code,
@@ -40,6 +41,7 @@ void main() {
     status: status,
     score: score,
     etaMinutes: eta,
+    acceptedAt: acceptedAt,
   );
 
   Future<void> pump(WidgetTester tester) async {
@@ -134,6 +136,28 @@ void main() {
     expect(find.text('Recibido · esperando prioridad'), findsOneWidget);
     expect(find.text('Transmitiendo…'), findsNothing);
     expect(find.bySemanticsLabel(RegExp('Paso 2 de 4')), findsOneWidget);
+  });
+
+  testWidgets('an accepted report says when the command center took it', (
+    tester,
+  ) async {
+    await reports.save(
+      report(
+        'SR-0430',
+        HelpCategory.rescue,
+        CitizenReportStatus.accepted,
+        score: 48,
+        acceptedAt: DateTime(2026, 11, 24, 14, 32),
+      ),
+    );
+
+    await pump(tester);
+
+    expect(
+      find.text('Aceptado por el centro de mando · 14:32'),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel(RegExp('Paso 3 de 4')), findsOneWidget);
   });
 
   testWidgets('without eta the brigade label leaves no gap', (tester) async {

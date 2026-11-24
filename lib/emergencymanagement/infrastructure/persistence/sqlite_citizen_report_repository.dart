@@ -72,6 +72,7 @@ class SqliteCitizenReportRepository implements CitizenReportRepository {
     'status': report.status.name,
     'score': report.score,
     'eta_minutes': report.etaMinutes,
+    'accepted_at': report.acceptedAt?.millisecondsSinceEpoch,
   };
 
   static CitizenReport _fromRow(Map<String, Object?> row) {
@@ -103,6 +104,10 @@ class SqliteCitizenReportRepository implements CitizenReportRepository {
       ),
       score: (row['score'] as num?)?.toDouble(),
       etaMinutes: row['eta_minutes'] as int?,
+      acceptedAt: switch (row['accepted_at']) {
+        final int millis => DateTime.fromMillisecondsSinceEpoch(millis),
+        _ => null,
+      },
     );
   }
 }

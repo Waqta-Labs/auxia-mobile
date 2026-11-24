@@ -80,6 +80,7 @@ void main() {
     expect(CitizenReportStatus.transmitting.completedSteps, 2);
     expect(CitizenReportStatus.received.completedSteps, 2);
     expect(CitizenReportStatus.prioritized.completedSteps, 3);
+    expect(CitizenReportStatus.accepted.completedSteps, 3);
     expect(CitizenReportStatus.brigadeOnTheWay.completedSteps, 4);
   });
 

@@ -39,6 +39,14 @@ import 'sos_widgets.dart';
         : l10n.statusPrioritized(report.score!.round().toString()),
     StatusTone.highlight,
   ),
+  // The Centro de Mando approved a plan for the zone: the citizen knows the
+  // request was accepted, and when (6.4.3: "Recibido por el centro de mando").
+  CitizenReportStatus.accepted => (
+    report.acceptedAt == null
+        ? l10n.statusAcceptedNoTime
+        : l10n.statusAccepted(_clock(report.acceptedAt!)),
+    StatusTone.success,
+  ),
   CitizenReportStatus.brigadeOnTheWay => (
     report.etaMinutes == null
         ? l10n.statusBrigadeNoEta
@@ -46,6 +54,13 @@ import 'sos_widgets.dart';
     StatusTone.success,
   ),
 };
+
+/// Hour and minutes on the clock of the phone, such as 14:32.
+String _clock(DateTime time) {
+  final local = time.toLocal();
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${two(local.hour)}:${two(local.minute)}';
+}
 
 /// Card of one report in the local queue (A_05): code, category, age,
 /// status and the four steps Guardado → Transmitiendo → Priorizado por IA →

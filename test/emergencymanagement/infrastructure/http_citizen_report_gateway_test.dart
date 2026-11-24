@@ -172,6 +172,22 @@ void main() {
     );
   });
 
+  test('reads when the command center accepted the SOS, in UTC', () {
+    expect(
+      remoteStatusFromJson({
+        'status': 'ACCEPTED',
+        'score': 48,
+        'etaMinutes': null,
+        'acceptedAt': '2026-11-24T19:32:00',
+      }),
+      RemoteReportStatus(
+        status: CitizenReportStatus.accepted,
+        score: 48,
+        acceptedAt: DateTime.utc(2026, 11, 24, 19, 32),
+      ),
+    );
+  });
+
   test('an unknown report is a not found, not a retry', () async {
     final adapter = FakeHttpAdapter({
       'GET /api/v1/public/field-reports/${_report.id}': (

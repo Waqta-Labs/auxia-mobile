@@ -110,6 +110,11 @@ enum CitizenReportStatus {
   /// Prioritized by the AI ("Priorizado por IA · 94").
   prioritized,
 
+  /// An authority of the Centro de Mando approved a plan for the zone after
+  /// the SOS arrived, and no brigade has taken it yet ("Aceptado por el
+  /// centro de mando · 14:32").
+  accepted,
+
   /// A brigade is on the way ("Brigada en camino", with the ETA if known).
   brigadeOnTheWay;
 
@@ -120,7 +125,7 @@ enum CitizenReportStatus {
   int get completedSteps => switch (this) {
     saved => 1,
     transmitting || received => 2,
-    prioritized => 3,
+    prioritized || accepted => 3,
     brigadeOnTheWay => 4,
   };
 }
@@ -137,6 +142,7 @@ final class CitizenReport extends Equatable {
     this.detail = const EmergencyDetail(),
     this.score,
     this.etaMinutes,
+    this.acceptedAt,
   });
 
   /// Id generated on the device; the backend uses it to avoid duplicates.
@@ -156,6 +162,10 @@ final class CitizenReport extends Equatable {
   /// Minutes until the brigade arrives, once assigned.
   final int? etaMinutes;
 
+  /// When the Centro de Mando accepted the SOS, once accepted or with the
+  /// brigade on the way.
+  final DateTime? acceptedAt;
+
   /// Whether it is still on the device, so the detail can be added to it.
   bool get isUnsent => status == CitizenReportStatus.saved;
 
@@ -167,12 +177,18 @@ final class CitizenReport extends Equatable {
     CitizenReportStatus status, {
     double? score,
     int? etaMinutes,
+    DateTime? acceptedAt,
   }) => _copy(
     status: status,
     score: score,
     etaMinutes: etaMinutes,
+    acceptedAt: acceptedAt,
     // The ETA belongs to a brigade on the way only.
     clearEta: status != CitizenReportStatus.brigadeOnTheWay,
+    // The acceptance belongs to a plan that is still to be delivered.
+    clearAcceptance:
+        status != CitizenReportStatus.accepted &&
+        status != CitizenReportStatus.brigadeOnTheWay,
   );
 
   CitizenReport _copy({
@@ -181,7 +197,9 @@ final class CitizenReport extends Equatable {
     CitizenReportStatus? status,
     double? score,
     int? etaMinutes,
+    DateTime? acceptedAt,
     bool clearEta = false,
+    bool clearAcceptance = false,
   }) => CitizenReport(
     id: id,
     code: code,
@@ -192,6 +210,7 @@ final class CitizenReport extends Equatable {
     detail: detail ?? this.detail,
     score: score ?? this.score,
     etaMinutes: clearEta ? null : etaMinutes ?? this.etaMinutes,
+    acceptedAt: clearAcceptance ? null : acceptedAt ?? this.acceptedAt,
   );
 
   /// Free text for the backend, which structures field reports with its NLP
@@ -252,6 +271,7 @@ final class CitizenReport extends Equatable {
     detail,
     score,
     etaMinutes,
+    acceptedAt,
   ];
 }
 
