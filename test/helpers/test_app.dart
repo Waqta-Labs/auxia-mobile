@@ -1,0 +1,463 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:auxia_mobile/core/config/app_config.dart';
+import 'package:auxia_mobile/core/connectivity/connectivity_monitor.dart';
+import 'package:auxia_mobile/core/database/app_database.dart';
+import 'package:auxia_mobile/core/failure.dart';
+import 'package:auxia_mobile/core/location/location_service.dart';
+import 'package:auxia_mobile/core/network/api_client.dart';
+import 'package:auxia_mobile/core/sync/sync_engine.dart';
+import 'package:auxia_mobile/core/theme/app_theme.dart';
+import 'package:auxia_mobile/emergencymanagement/application/quick_evidence.dart';
+import 'package:auxia_mobile/emergencymanagement/domain/model/citizen_report.dart';
+import 'package:auxia_mobile/emergencymanagement/domain/repositories/citizen_report_gateway.dart';
+import 'package:auxia_mobile/identityaccess/domain/model/local_profile.dart';
+import 'package:auxia_mobile/identityaccess/domain/model/session.dart';
+import 'package:auxia_mobile/identityaccess/domain/repositories/profile_repository.dart';
+import 'package:auxia_mobile/identityaccess/domain/repositories/session_repository.dart';
+import 'package:auxia_mobile/l10n/generated/app_localizations.dart';
+import 'package:auxia_mobile/networkstorage/application/service_status.dart';
+import 'package:auxia_mobile/resourcemanagement/domain/model/mission.dart';
+import 'package:auxia_mobile/resourcemanagement/domain/repositories/mission_ports.dart';
+import 'package:auxia_mobile/shared/domain/geo_point.dart';
+import 'package:auxia_mobile/traceability/application/delivery_evidence.dart';
+import 'package:auxia_mobile/traceability/domain/model/delivery.dart';
+import 'package:auxia_mobile/traceability/domain/repositories/delivery_ports.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+/// Wraps a screen with the AuxIA theme and the Spanish localizations.
+Widget localizedApp(Widget home, {Locale locale = const Locale('es')}) =>
+    MaterialApp(
+      theme: AppTheme.dark(),
+      locale: locale,
+      supportedLocales: const [Locale('es'), Locale('en')],
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: home,
+    );
+
+/// Profile repository kept in memory.
+class InMemoryProfileRepository implements ProfileRepository {
+  InMemoryProfileRepository([this.profile]);
+
+  LocalProfile? profile;
+
+  @override
+  Future<LocalProfile?> load() async => profile;
+
+  @override
+  Future<void> save(LocalProfile profile) async => this.profile = profile;
+
+  @override
+  Future<void> clear() async => profile = null;
+}
+
+/// Session repository kept in memory.
+class InMemorySessionRepository implements SessionRepository {
+  Session? session;
+
+  @override
+  Future<Session?> load() async => session;
+
+  @override
+  Future<void> save(Session session) async => this.session = session;
+
+  @override
+  Future<void> clear() async => session = null;
+}
+
+/// Sign-in gateway that answers with a fixed result.
+class FakeAuthenticationGateway implements AuthenticationGateway {
+  FakeAuthenticationGateway([Either<Failure, Session>? result])
+    : result = result ?? Right(brigadeSession());
+
+  Either<Failure, Session> result;
+  String? lastEmail;
+
+  @override
+  Future<Either<Failure, Session>> signIn({
+    required String email,
+    required String password,
+  }) async {
+    lastEmail = email;
+    return result;
+  }
+
+  /// Registration ids of the device sign-ins.
+  final List<String> deviceSignIns = [];
+
+  @override
+  Future<Either<Failure, Session>> deviceSignIn({
+    required String registrationId,
+    required String deviceSecret,
+  }) async {
+    deviceSignIns.add(registrationId);
+    return result;
+  }
+}
+
+Session brigadeSession({
+  AccountRole role = AccountRole.fieldBrigade,
+  DateTime? expiresAt,
+}) => Session(
+  token: 'token-123',
+  expiresAt: expiresAt ?? DateTime.now().add(const Duration(hours: 8)),
+  userId: 'user-1',
+  organizationId: 'org-1',
+  role: role,
+  fullName: 'Cap. M. Quispe',
+);
+
+/// Network that the test turns on and off.
+class FakeConnectivityMonitor implements ConnectivityMonitor {
+  FakeConnectivityMonitor({bool online = true})
+    : status = online
+          ? const NetworkStatus({NetworkChannel.cellular})
+          : const NetworkStatus.offline();
+
+  NetworkStatus status;
+  final StreamController<NetworkStatus> _changes = StreamController.broadcast();
+
+  void set({required bool online}) {
+    status = online
+        ? const NetworkStatus({NetworkChannel.cellular})
+        : const NetworkStatus.offline();
+    _changes.add(status);
+  }
+
+  @override
+  Future<NetworkStatus> current() async => status;
+
+  @override
+  Stream<NetworkStatus> get changes => _changes.stream;
+}
+
+/// Sync controller with a fixed state, for widget tests.
+class FakeSyncController implements SyncController {
+  FakeSyncController([this.state = const SyncState()]);
+
+  @override
+  SyncState state;
+  final StreamController<SyncState> _states = StreamController.broadcast();
+  int syncCalls = 0;
+  int retryCalls = 0;
+
+  void emit(SyncState next) {
+    state = next;
+    _states.add(next);
+  }
+
+  @override
+  Stream<SyncState> get states => _states.stream;
+
+  @override
+  Future<void> syncNow() async => syncCalls++;
+
+  @override
+  Future<void> retryAll() async => retryCalls++;
+
+  @override
+  void sessionRestored() {}
+}
+
+/// Fresh in-memory copy of the app database (sqflite over FFI, in the same
+/// isolate so it also works inside widget tests).
+Future<Database> openTestDatabase() async {
+  sqfliteFfiInit();
+  final options = AppDatabase.options();
+  return databaseFactoryFfiNoIsolate.openDatabase(
+    inMemoryDatabasePath,
+    options: OpenDatabaseOptions(
+      version: options.version,
+      onConfigure: options.onConfigure,
+      onCreate: options.onCreate,
+      onUpgrade: options.onUpgrade,
+      singleInstance: false,
+    ),
+  );
+}
+
+/// GPS that answers with a fixed result.
+class FakeLocationService implements LocationService {
+  FakeLocationService([
+    this.result = const LocationFix(GeoPoint(-12.0464, -77.0428)),
+  ]);
+
+  LocationResult result;
+
+  @override
+  Future<LocationResult> locate({Duration timeout = Duration.zero}) async =>
+      result;
+}
+
+/// Camera and microphone that return fixed files.
+class FakeQuickEvidence implements QuickEvidence {
+  bool microphoneAllowed = true;
+  bool recording = false;
+  String? photo = '/evidence/photo.jpg';
+
+  @override
+  Future<String?> takePhoto() async => photo;
+
+  @override
+  Future<bool> startAudio() async => recording = microphoneAllowed;
+
+  @override
+  Future<String?> stopAudio() async {
+    recording = false;
+    return '/evidence/audio.m4a';
+  }
+}
+
+/// HTTP adapter that answers by "METHOD path" and records the requests.
+class FakeHttpAdapter implements HttpClientAdapter {
+  FakeHttpAdapter(this.routes);
+
+  /// "POST /api/v1/x" → (status, json body).
+  final Map<String, (int, Object?)> routes;
+  final List<RequestOptions> requests = [];
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    requests.add(options);
+    final key = '${options.method} ${options.uri.path}';
+    final (status, body) = routes[key] ?? (404, {'detail': 'Not Found'});
+    return ResponseBody.fromString(
+      jsonEncode(body),
+      status,
+      headers: {
+        Headers.contentTypeHeader: ['application/json'],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+/// API client over a [FakeHttpAdapter].
+ApiClient fakeApiClient(FakeHttpAdapter adapter, {String? token}) => ApiClient(
+  config: const AppConfig(apiBaseUrl: 'https://api.test'),
+  accessToken: () async => token,
+  language: () => 'es',
+  dio: Dio()..httpClientAdapter = adapter,
+);
+
+/// Citizen report gateway with scripted answers.
+class FakeCitizenReportGateway implements CitizenReportGateway {
+  Either<Failure, Unit> submitResult = const Right(unit);
+  final Map<String, Either<Failure, RemoteReportStatus>> statuses = {};
+  final List<(String, String)> submitted = [];
+
+  /// (body, hops) of each SOS uploaded for another phone.
+  final List<(Map<String, Object?>, int)> relayed = [];
+
+  /// (clientReportId, attachmentId, path) of each uploaded evidence.
+  final List<(String, String, String)> uploaded = [];
+  Either<Failure, Unit> uploadResult = const Right(unit);
+
+  @override
+  Future<Either<Failure, Unit>> submit(
+    CitizenReport report, {
+    String? clientReportId,
+    String? text,
+    CitizenReport? relatedReport,
+  }) async {
+    submitted.add((clientReportId ?? report.id, text ?? report.toReportText()));
+    return submitResult;
+  }
+
+  @override
+  Future<Either<Failure, Unit>> submitRelayed(
+    Map<String, Object?> body, {
+    required int hops,
+  }) async {
+    relayed.add((body, hops));
+    return submitResult;
+  }
+
+  @override
+  Future<Either<Failure, RemoteReportStatus>> status(String id) async =>
+      statuses[id] ?? const Left(NetworkFailure());
+
+  @override
+  Future<Either<Failure, Unit>> uploadEvidence(
+    String clientReportId, {
+    required String attachmentId,
+    required String path,
+  }) async {
+    uploaded.add((clientReportId, attachmentId, path));
+    return uploadResult;
+  }
+}
+
+/// Mission of the examples: Sector Santa Rosa, score 94.
+Mission sampleMission({
+  String id = 'plan-1',
+  String? deliveryId = 'delivery-1',
+  MissionStatus status = MissionStatus.assigned,
+  GeoPoint location = const GeoPoint(-12.0432, -77.0428),
+}) => Mission(
+  id: id,
+  deliveryId: deliveryId,
+  category: MissionCategory.medical,
+  brigadeId: 'brigade-alfa',
+  brigadeName: 'Brigada Alfa',
+  planId: 'plan-1',
+  zoneId: 'zone-1',
+  zoneName: 'Sector Santa Rosa',
+  priority: PriorityLevel.critical,
+  status: status,
+  location: location,
+  score: 94,
+  damage: DamageLevel.severe,
+  people: const ZonePeople(
+    peopleAffected: 120,
+    children: 3,
+    elderly: 1,
+    disabled: 2,
+  ),
+  reasons: const [
+    ScoreReason(ScoreFeature.vulnerablePopulation, 18.5),
+    ScoreReason(ScoreFeature.damageLevel, 30),
+  ],
+  items: const [
+    MissionItem(
+      resourceId: 'r1',
+      name: 'Kit de víveres',
+      quantity: 12,
+      unit: 'KIT',
+    ),
+  ],
+  assignedAt: DateTime.now().subtract(const Duration(hours: 4)),
+);
+
+/// Mission gateway that answers `/me/missions` with [mission].
+class FakeMissionGateway implements MissionGateway {
+  FakeMissionGateway({this.mission});
+
+  Mission? mission;
+
+  /// Null when the account is in no brigade.
+  String? brigadeName = 'Brigada Alfa';
+  Failure? failure;
+
+  @override
+  Future<Either<Failure, MyMissions>> myMissions() async {
+    if (failure != null) return Left(failure!);
+    return Right(
+      MyMissions(
+        brigadeId: brigadeName == null ? null : 'brigade-alfa',
+        brigadeName: brigadeName,
+        missions: [?mission],
+      ),
+    );
+  }
+}
+
+/// Delivery evidence kept in memory.
+class FakeDeliveryEvidence implements DeliveryEvidence {
+  String? photo = '/deliveries/reception.jpg';
+  final List<Uint8List> signatures = [];
+
+  @override
+  Future<String?> takePhoto() async => photo;
+
+  @override
+  Future<String> saveSignature(Uint8List png) async {
+    signatures.add(png);
+    return '/deliveries/signature.png';
+  }
+}
+
+/// Delivery gateway with scripted answers.
+class FakeDeliveryGateway implements DeliveryGateway {
+  Either<Failure, DeliveryIntegrity> registerResult = const Right(
+    DeliveryIntegrity(
+      anchorStatus: AnchorStatus.pending,
+      recordHash:
+          'ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56c91e',
+    ),
+  );
+  Either<Failure, DeliveryIntegrity> integrityResult = const Right(
+    DeliveryIntegrity(
+      anchorStatus: AnchorStatus.anchored,
+      recordHash:
+          'ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56c91e',
+      transactionHash:
+          '0x7f3a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6ec91e',
+    ),
+  );
+  int registrations = 0;
+
+  @override
+  Future<Either<Failure, DeliveryIntegrity>> register(
+    DeliveryRecord record,
+  ) async {
+    registrations++;
+    return registerResult;
+  }
+
+  Either<Failure, DeliveryVerification> verifyResult = const Right(
+    DeliveryVerification(
+      recordHash:
+          'ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56c91e',
+      anchoredHash:
+          'ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56c91e',
+      verified: true,
+    ),
+  );
+  int verifications = 0;
+
+  @override
+  Future<Either<Failure, DeliveryIntegrity>> integrity(String id) async =>
+      integrityResult;
+
+  @override
+  Future<Either<Failure, DeliveryVerification>> verify(String id) async {
+    verifications++;
+    return verifyResult;
+  }
+}
+
+/// Order of the sample mission.
+const sampleOrder = DeliveryOrder(
+  deliveryId: '3f2a91c0-0000-4000-8000-000000002041',
+  zoneName: 'Sector Santa Rosa',
+  brigadeName: 'Brigada Alfa',
+  lines: [
+    DeliveryLine(
+      resourceId: 'r1',
+      name: 'Kit de víveres',
+      unit: 'KIT',
+      planned: 12,
+      delivered: 12,
+    ),
+  ],
+);
+
+/// Health checks with scripted answers; every service is up by default.
+class FakeServiceHealthProbe implements ServiceHealthProbe {
+  final Set<CloudService> down = {};
+  int checks = 0;
+
+  @override
+  Future<bool> isUp(CloudService service) async {
+    checks++;
+    return !down.contains(service);
+  }
+}

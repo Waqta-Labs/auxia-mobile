@@ -1,0 +1,554 @@
+import 'dart:typed_data';
+
+import 'package:auxia_mobile/core/failure.dart';
+import 'package:auxia_mobile/core/location/location_service.dart';
+import 'package:auxia_mobile/core/sync/outbox_repository.dart';
+import 'package:auxia_mobile/shared/domain/geo_point.dart';
+import 'package:auxia_mobile/traceability/application/delivery_service.dart';
+import 'package:auxia_mobile/traceability/domain/model/delivery.dart';
+import 'package:auxia_mobile/traceability/infrastructure/persistence/sqlite_delivery_record_repository.dart';
+import 'package:auxia_mobile/traceability/interfaces/pages/delivery/delivery_cubit.dart';
+import 'package:auxia_mobile/traceability/interfaces/pages/delivery/delivery_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:sqflite_common/sqlite_api.dart';
+
+import '../helpers/test_app.dart';
+
+void main() {
+  late Database db;
+  late SqliteDeliveryRecordRepository records;
+  late OutboxRepository outbox;
+  late FakeDeliveryGateway gateway;
+  late DeliveryService service;
+  late FakeDeliveryEvidence evidence;
+  late List<String> completed;
+
+  setUp(() async {
+    db = await openTestDatabase();
+    records = SqliteDeliveryRecordRepository(db);
+    outbox = OutboxRepository(db);
+    gateway = FakeDeliveryGateway();
+    service = DeliveryService(records, outbox, gateway);
+    evidence = FakeDeliveryEvidence();
+    completed = [];
+  });
+
+  tearDown(() => db.close());
+
+  DeliveryCubit cubit({LocationService? location}) => DeliveryCubit(
+    service,
+    evidence,
+    location ?? FakeLocationService(),
+    order: sampleOrder,
+    onRegistered: (id) async => completed.add(id),
+    minVerifying: Duration.zero,
+  );
+
+  group('DeliveryService and handler', () {
+    test('saves the delivery and queues its registration', () async {
+      final result = await service.register(
+        order: sampleOrder,
+        signaturePath: '/s.png',
+        photoPath: '/p.jpg',
+      );
+
+      expect(
+        result.getRight().toNullable()!.status,
+        DeliveryRecordStatus.queued,
+      );
+      final item = (await outbox.due()).single;
+      expect(item.type, deliveryOutboxType);
+      expect(item.payload, {'deliveryId': sampleOrder.deliveryId});
+    });
+
+    test('nothing to deliver is refused', () async {
+      final empty = DeliveryOrder(
+        deliveryId: sampleOrder.deliveryId,
+        zoneName: 'Z',
+        brigadeName: 'B',
+        lines: [sampleOrder.lines.single.withDelivered(0)],
+      );
+
+      final result = await service.register(
+        order: empty,
+        signaturePath: '/s.png',
+        photoPath: '/p.jpg',
+      );
+
+      expect(result.getLeft().toNullable(), isA<ValidationFailure>());
+    });
+
+    test('the handler stores the hash given by the backend', () async {
+      await service.register(
+        order: sampleOrder,
+        signaturePath: '/s.png',
+        photoPath: '/p.jpg',
+      );
+
+      final result = await DeliveryRegistrationHandler(
+        records,
+        gateway,
+      ).send((await outbox.due()).single);
+
+      expect(result.isRight(), isTrue);
+      final record = (await records.find(sampleOrder.deliveryId))!;
+      expect(record.status, DeliveryRecordStatus.registered);
+      expect(record.recordHash, endsWith('c91e'));
+    });
+
+    test('a refused delivery keeps the reason', () async {
+      gateway.registerResult = const Left(
+        ValidationFailure('La cantidad supera la del plan.', statusCode: 422),
+      );
+      await service.register(
+        order: sampleOrder,
+        signaturePath: '/s.png',
+        photoPath: '/p.jpg',
+      );
+
+      await DeliveryRegistrationHandler(
+        records,
+        gateway,
+      ).send((await outbox.due()).single);
+
+      final record = (await records.find(sampleOrder.deliveryId))!;
+      expect(record.status, DeliveryRecordStatus.rejected);
+      expect(record.rejection, 'La cantidad supera la del plan.');
+    });
+
+    test(
+      'a refused delivery reopens its mission and can be sent again',
+      () async {
+        gateway.registerResult = const Left(
+          ValidationFailure('La cantidad supera la del plan.', statusCode: 422),
+        );
+        await service.register(
+          order: sampleOrder,
+          signaturePath: '/s.png',
+          photoPath: '/p.jpg',
+        );
+        final reopened = <String>[];
+        final item = (await outbox.due()).single;
+        await DeliveryRegistrationHandler(
+          records,
+          gateway,
+          onRejected: (id) async => reopened.add(id),
+        ).send(item);
+        // The sync engine leaves a refused write out of the queue.
+        await outbox.markRejected(item.id, 'La cantidad supera la del plan.');
+
+        expect(reopened, [sampleOrder.deliveryId]);
+
+        final corrected = await service.register(
+          order: sampleOrder,
+          signaturePath: '/s.png',
+          photoPath: '/p.jpg',
+        );
+
+        expect(corrected.isRight(), isTrue);
+        expect(
+          (await records.find(sampleOrder.deliveryId))!.status,
+          DeliveryRecordStatus.queued,
+        );
+        expect((await outbox.due()).single.id, item.id);
+      },
+    );
+
+    test('a lost signal keeps the delivery queued', () async {
+      gateway.registerResult = const Left(NetworkFailure());
+      await service.register(
+        order: sampleOrder,
+        signaturePath: '/s.png',
+        photoPath: '/p.jpg',
+      );
+
+      await DeliveryRegistrationHandler(
+        records,
+        gateway,
+      ).send((await outbox.due()).single);
+
+      expect(
+        (await records.find(sampleOrder.deliveryId))!.status,
+        DeliveryRecordStatus.queued,
+      );
+    });
+
+    test('the anchoring is read until the hash is on Blockchain', () async {
+      await service.register(
+        order: sampleOrder,
+        signaturePath: '/s.png',
+        photoPath: '/p.jpg',
+      );
+      await DeliveryRegistrationHandler(
+        records,
+        gateway,
+      ).send((await outbox.due()).single);
+
+      final result = await service.refreshIntegrity(sampleOrder.deliveryId);
+
+      final record = result.getRight().toNullable()!;
+      expect(record.status, DeliveryRecordStatus.anchored);
+      expect(record.transactionHash, startsWith('0x7f3a'));
+    });
+  });
+
+  group('DeliveryCubit (A_08)', () {
+    test('a refused delivery is corrected from its evidence', () async {
+      await records.save(
+        DeliveryRecord(
+          order: sampleOrder,
+          deliveredAt: DateTime(2026, 11, 8, 10),
+          signaturePath: '/s.png',
+          photoPath: '/p.jpg',
+          status: DeliveryRecordStatus.queued,
+        ).rejected('La cantidad supera la del plan.'),
+      );
+      final delivery = cubit();
+      addTearDown(delivery.close);
+      await delivery.start();
+      expect(delivery.state.step, DeliveryStep.blockchain);
+
+      delivery.correct();
+
+      expect(delivery.state.step, DeliveryStep.evidence);
+      expect(delivery.state.record, isNull);
+      expect(delivery.state.signaturePath, '/s.png');
+      expect(delivery.state.photoPath, '/p.jpg');
+      expect(delivery.state.evidenceComplete, isTrue);
+    });
+
+    test('a wrong QR does not open the evidence step', () async {
+      final delivery = cubit()..scanned('8b7c0000-0000-4000-8000-000000000000');
+
+      expect(delivery.state.step, DeliveryStep.scan);
+      expect(delivery.state.wrongCode, isTrue);
+      await delivery.close();
+    });
+
+    test('evidence must be complete before registering', () async {
+      final delivery = cubit()..scanned(sampleOrder.deliveryId);
+      expect(delivery.state.step, DeliveryStep.evidence);
+
+      await delivery.submit();
+      expect(delivery.state.record, isNull);
+
+      await delivery.signed(Uint8List.fromList([1]));
+      await delivery.takePhoto();
+      expect(delivery.state.evidenceComplete, isTrue);
+
+      await delivery.submit();
+      expect(delivery.state.step, DeliveryStep.blockchain);
+      expect(delivery.state.record!.location, isNotNull);
+      expect(completed, [sampleOrder.deliveryId]);
+      await delivery.close();
+    });
+
+    test('the evidence step looks for the place of the delivery', () async {
+      final delivery = cubit()..scanned(sampleOrder.deliveryId);
+      addTearDown(delivery.close);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(delivery.state.location, const GeoPoint(-12.0464, -77.0428));
+      expect(delivery.state.locating, isFalse);
+    });
+
+    DeliveryRecord anchoredRecord() => DeliveryRecord(
+      order: sampleOrder,
+      deliveredAt: DateTime(2026, 11, 8, 10),
+      signaturePath: '/s.png',
+      photoPath: '/p.jpg',
+      status: DeliveryRecordStatus.anchored,
+      recordHash: 'abc',
+    );
+
+    test('an anchored delivery is verified against the contract', () async {
+      await records.save(anchoredRecord());
+      final delivery = cubit();
+      addTearDown(delivery.close);
+      await delivery.start();
+
+      await delivery.verify();
+
+      expect(gateway.verifications, 1);
+      expect(delivery.state.verifying, isFalse);
+      expect(delivery.state.verification!.verified, isTrue);
+      expect(delivery.state.verifyFailure, isNull);
+    });
+
+    test(
+      'the verification stays visible even when the answer is fast',
+      () async {
+        await records.save(anchoredRecord());
+        final delivery = DeliveryCubit(
+          service,
+          evidence,
+          FakeLocationService(),
+          order: sampleOrder,
+          onRegistered: (_) async {},
+          minVerifying: const Duration(milliseconds: 60),
+        );
+        addTearDown(delivery.close);
+        await delivery.start();
+
+        final verifying = delivery.verify();
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        expect(gateway.verifications, 1);
+        expect(delivery.state.verifying, isTrue);
+        expect(delivery.state.verification, isNull);
+
+        await verifying;
+        expect(delivery.state.verifying, isFalse);
+        expect(delivery.state.verification!.verified, isTrue);
+      },
+    );
+
+    test('a changed delivery is reported as tampered', () async {
+      gateway.verifyResult = const Right(
+        DeliveryVerification(
+          recordHash: 'new',
+          anchoredHash: 'old',
+          verified: false,
+        ),
+      );
+      await records.save(anchoredRecord());
+      final delivery = cubit();
+      addTearDown(delivery.close);
+      await delivery.start();
+
+      await delivery.verify();
+
+      expect(delivery.state.verification!.tampered, isTrue);
+    });
+
+    test('a verification without signal can be retried', () async {
+      gateway.verifyResult = const Left(NetworkFailure());
+      await records.save(anchoredRecord());
+      final delivery = cubit();
+      addTearDown(delivery.close);
+      await delivery.start();
+
+      await delivery.verify();
+      expect(delivery.state.verifyFailure, isA<NetworkFailure>());
+
+      gateway.verifyResult = const Right(
+        DeliveryVerification(
+          recordHash: 'a',
+          anchoredHash: 'a',
+          verified: true,
+        ),
+      );
+      await delivery.verify();
+      expect(delivery.state.verifyFailure, isNull);
+      expect(delivery.state.verification!.verified, isTrue);
+    });
+
+    test('a failed anchoring is asked again until it is anchored', () async {
+      await records.save(
+        anchoredRecord().withIntegrity(
+          const DeliveryIntegrity(anchorStatus: AnchorStatus.failed),
+        ),
+      );
+      final delivery = DeliveryCubit(
+        service,
+        evidence,
+        FakeLocationService(),
+        order: sampleOrder,
+        onRegistered: (_) async {},
+        pollEvery: const Duration(milliseconds: 10),
+      );
+      addTearDown(delivery.close);
+      await delivery.start();
+      expect(delivery.state.record!.status, DeliveryRecordStatus.anchorFailed);
+
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(delivery.state.record!.status, DeliveryRecordStatus.anchored);
+    });
+
+    test('a delivery not anchored yet is not verified', () async {
+      await records.save(
+        DeliveryRecord(
+          order: sampleOrder,
+          deliveredAt: DateTime(2026, 11, 8, 10),
+          signaturePath: '/s.png',
+          photoPath: '/p.jpg',
+          status: DeliveryRecordStatus.queued,
+        ),
+      );
+      final delivery = cubit();
+      addTearDown(delivery.close);
+      await delivery.start();
+
+      await delivery.verify();
+
+      expect(gateway.verifications, 0);
+      expect(delivery.state.verification, isNull);
+    });
+
+    test('quantities can be lowered, never raised above the plan', () async {
+      final delivery = cubit()
+        ..scanned(sampleOrder.deliveryId)
+        ..changeQuantity('r1', -2)
+        ..changeQuantity('r1', 5);
+
+      expect(delivery.state.order.lines.single.delivered, 12);
+      delivery.changeQuantity('r1', -2);
+      expect(delivery.state.order.lines.single.delivered, 10);
+      await delivery.close();
+    });
+  });
+
+  testWidgets('A_08 accepts the code typed by hand', (tester) async {
+    tester.view.physicalSize = const Size(1170, 5000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      localizedApp(
+        DeliveryScreen(
+          order: sampleOrder,
+          createCubit: (_) => cubit(),
+          onNextMission: () {},
+          onOpenTransaction: (_) {},
+          scannerBuilder: (_) => const SizedBox(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Ingresar el código a mano'));
+    await tester.pumpAndSettle();
+    expect(find.byType(BottomSheet), findsOneWidget);
+    await tester.enterText(find.byType(TextField), sampleOrder.deliveryId);
+    await tester.tap(find.text('Confirmar'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('1 · Escaneo ✓'), findsOneWidget);
+  });
+
+  testWidgets('without GPS, A_08 asks before registering without location', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1170, 5000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    late DeliveryCubit delivery;
+    await tester.pumpWidget(
+      localizedApp(
+        DeliveryScreen(
+          order: sampleOrder,
+          createCubit: (_) => delivery = cubit(
+            location: FakeLocationService(
+              const LocationUnavailable(LocationIssue.unavailable),
+            ),
+          ),
+          onNextMission: () {},
+          onOpenTransaction: (_) {},
+          scannerBuilder: (onDetect) => TextButton(
+            onPressed: () => onDetect(sampleOrder.deliveryId),
+            child: const Text('fake-scan'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('fake-scan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sin ubicación GPS'), findsOneWidget);
+
+    await delivery.signed(Uint8List.fromList([1]));
+    await tester.tap(find.text('Foto de recepción'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Registrar entrega'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BottomSheet), findsOneWidget);
+    await tester.tap(find.text('Registrar sin ubicación'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Entrega guardada · se registrará al detectar señal'),
+      findsOneWidget,
+    );
+    expect(
+      (await tester.runAsync(
+        () => records.find(sampleOrder.deliveryId),
+      ))!.location,
+      isNull,
+    );
+  });
+
+  testWidgets('A_08 goes from scan to the Blockchain seal', (tester) async {
+    tester.view.physicalSize = const Size(1170, 5000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    late DeliveryCubit delivery;
+    await tester.pumpWidget(
+      localizedApp(
+        DeliveryScreen(
+          order: sampleOrder,
+          createCubit: (_) => delivery = cubit(),
+          onNextMission: () {},
+          onOpenTransaction: (_) {},
+          scannerBuilder: (onDetect) => TextButton(
+            onPressed: () => onDetect(sampleOrder.deliveryId),
+            child: const Text('fake-scan'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Verificar entrega'), findsOneWidget);
+    expect(find.text('#3F2A-91C0'), findsWidgets);
+    await tester.tap(find.text('fake-scan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 · Escaneo ✓'), findsOneWidget);
+    expect(find.text('12/12 · Kit de víveres'), findsOneWidget);
+
+    await delivery.signed(Uint8List.fromList([1]));
+    await tester.tap(find.text('Foto de recepción'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Registrar entrega'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Entrega guardada · se registrará al detectar señal'),
+      findsOneWidget,
+    );
+
+    await DeliveryRegistrationHandler(
+      records,
+      gateway,
+    ).send((await outbox.due()).single);
+    await delivery.refresh();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Entrega registrada · misión completada'), findsOneWidget);
+    expect(
+      find.text(
+        'Este registro prueba que la ayuda llegó y nadie puede modificarlo.',
+      ),
+      findsOneWidget,
+    );
+    // The hash is a technical detail, folded until the brigadist opens it.
+    expect(find.text('0x7f3a…c91e'), findsNothing);
+    await tester.tap(find.text('Detalle técnico (hash y transacción)'));
+    await tester.pumpAndSettle();
+    expect(find.text('0x7f3a…c91e'), findsOneWidget);
+    expect(find.text('3 · Blockchain ✓'), findsOneWidget);
+    expect(find.text('Siguiente misión'), findsOneWidget);
+
+    await tester.tap(find.text('Comprobar el registro'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Comprobado: el registro no cambió desde la entrega'),
+      findsOneWidget,
+    );
+  });
+}

@@ -1,0 +1,303 @@
+import 'dart:async';
+import 'dart:math';
+
+import 'package:equatable/equatable.dart';
+import 'package:fpdart/fpdart.dart';
+
+import '../connectivity/connectivity_monitor.dart';
+import '../failure.dart';
+import 'outbox_item.dart';
+import 'outbox_repository.dart';
+
+/// Sends the writes of one type of the outbox to the backend.
+abstract interface class OutboxHandler {
+  String get type;
+
+  /// Sends the write. A retryable failure keeps it queued; any other failure
+  /// rejects it.
+  Future<Either<Failure, Unit>> send(OutboxItem item);
+}
+
+/// Waiting time before the next attempt: 5 s, 10 s, 20 s… up to 5 min.
+/// Wait after a send that failed for lack of signal. It does not grow with
+/// the attempts: the backend did nothing wrong, and a report must leave soon
+/// after the signal is back (R-02: under 30 s).
+const Duration offlineRetryDelay = Duration(seconds: 15);
+
+Duration retryDelay(int attempts) {
+  const base = Duration(seconds: 5);
+  const cap = Duration(minutes: 5);
+  final exponent = min(max(0, attempts - 1), 10);
+  final delay = base * pow(2, exponent).toInt();
+  return delay > cap ? cap : delay;
+}
+
+/// Progress of the synchronization, for the badges and the progress bar.
+final class SyncState extends Equatable {
+  const SyncState({
+    this.network = const NetworkStatus.offline(),
+    this.running = false,
+    this.total = 0,
+    this.done = 0,
+    this.pending = 0,
+    this.lastSyncAt,
+    this.needsSignIn = false,
+  });
+
+  final NetworkStatus network;
+  final bool running;
+
+  /// Writes in the current run and how many were processed.
+  final int total;
+  final int done;
+
+  /// Writes still waiting on the device.
+  final int pending;
+
+  /// Last run that reached the backend.
+  final DateTime? lastSyncAt;
+
+  /// The backend answered 401: the brigadist must sign in again.
+  final bool needsSignIn;
+
+  double? get progress => running && total > 0 ? done / total : null;
+
+  SyncState copyWith({
+    NetworkStatus? network,
+    bool? running,
+    int? total,
+    int? done,
+    int? pending,
+    DateTime? lastSyncAt,
+    bool? needsSignIn,
+  }) => SyncState(
+    network: network ?? this.network,
+    running: running ?? this.running,
+    total: total ?? this.total,
+    done: done ?? this.done,
+    pending: pending ?? this.pending,
+    lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+    needsSignIn: needsSignIn ?? this.needsSignIn,
+  );
+
+  @override
+  List<Object?> get props => [
+    network,
+    running,
+    total,
+    done,
+    pending,
+    lastSyncAt,
+    needsSignIn,
+  ];
+}
+
+/// What the interface can ask of the synchronization.
+abstract interface class SyncController {
+  SyncState get state;
+
+  Stream<SyncState> get states;
+
+  Future<void> syncNow();
+
+  Future<void> retryAll();
+
+  void sessionRestored();
+}
+
+/// Empties the outbox when there is network (TS-C06, R-02).
+///
+/// It runs when the network comes back, every minute while the app is open,
+/// after each new write and when the user asks ("Forzar reintento",
+/// "Sincronizar ahora").
+class SyncEngine implements SyncController {
+  SyncEngine({
+    required this._outbox,
+    required this._connectivity,
+    required Iterable<OutboxHandler> handlers,
+    DateTime Function()? clock,
+    this.period = const Duration(minutes: 1),
+  }) : _handlers = {for (final handler in handlers) handler.type: handler},
+       _clock = clock ?? DateTime.now;
+
+  final OutboxRepository _outbox;
+  final ConnectivityMonitor _connectivity;
+  final Map<String, OutboxHandler> _handlers;
+  final DateTime Function() _clock;
+  final Duration period;
+
+  final StreamController<SyncState> _states = StreamController.broadcast();
+  SyncState _state = const SyncState();
+  StreamSubscription<NetworkStatus>? _networkSubscription;
+  StreamSubscription<void>? _outboxSubscription;
+  Timer? _timer;
+  Future<void>? _running;
+
+  /// A sync was asked while a run was going on.
+  bool _runAgain = false;
+
+  @override
+  SyncState get state => _state;
+
+  @override
+  Stream<SyncState> get states => _states.stream;
+
+  /// Starts listening to the network and to new writes.
+  Future<void> start() async {
+    await _outbox.recoverInterrupted();
+    final network = await _connectivity.current();
+    final pending = await _outbox.countUnsent();
+    _emit(_state.copyWith(network: network, pending: pending));
+    _networkSubscription = _connectivity.changes.listen((network) {
+      final cameOnline = network.isOnline && !_state.network.isOnline;
+      _emit(_state.copyWith(network: network));
+      // Everything waiting goes now, even writes still in their backoff.
+      if (cameOnline) unawaited(retryAll());
+    });
+    _outboxSubscription = _outbox.changes.listen((_) {
+      unawaited(_refreshPending());
+      if (_state.network.isOnline) unawaited(syncNow());
+    });
+    _timer = Timer.periodic(period, (_) => unawaited(syncNow()));
+    unawaited(syncNow());
+  }
+
+  Future<void> stop() async {
+    _timer?.cancel();
+    await _networkSubscription?.cancel();
+    await _outboxSubscription?.cancel();
+  }
+
+  /// "Forzar reintento de sincronización": every queued write is due now.
+  @override
+  Future<void> retryAll() async {
+    await _outbox.makeAllDue();
+    await syncNow();
+  }
+
+  /// Sends the due writes. Concurrent calls share the same run, and a call
+  /// during a run asks for one more: the writes queued meanwhile were not in
+  /// it and must not wait for the next minute (R-02: under 30 s).
+  @override
+  Future<void> syncNow() {
+    final running = _running;
+    if (running != null) {
+      _runAgain = true;
+      return running;
+    }
+    return _running = _runWhileAsked().whenComplete(() => _running = null);
+  }
+
+  Future<void> _runWhileAsked() async {
+    do {
+      _runAgain = false;
+      await _run();
+    } while (_runAgain);
+  }
+
+  /// The brigadist signed in again: queued writes can be retried.
+  @override
+  void sessionRestored() => _emit(_state.copyWith(needsSignIn: false));
+
+  Future<void> _run() async {
+    final network = await _connectivity.current();
+    _emit(_state.copyWith(network: network));
+    if (!network.isOnline) return;
+
+    final due = await _outbox.due();
+    if (due.isEmpty) return;
+
+    _emit(_state.copyWith(running: true, total: due.length, done: 0));
+    var reachedBackend = false;
+    try {
+      for (final item in due) {
+        final outcome = await _send(item);
+        if (outcome != _Outcome.offline) reachedBackend = true;
+        _emit(_state.copyWith(done: _state.done + 1));
+        if (outcome == _Outcome.offline || outcome == _Outcome.unauthorized) {
+          break;
+        }
+      }
+    } finally {
+      // Even after an unexpected error the progress bar must stop.
+      final pending = await _outbox.countUnsent();
+      _emit(
+        _state.copyWith(
+          running: false,
+          pending: pending,
+          lastSyncAt: reachedBackend ? _clock() : null,
+        ),
+      );
+    }
+  }
+
+  Future<_Outcome> _send(OutboxItem item) async {
+    final handler = _handlers[item.type];
+    if (handler == null) {
+      // No channel can send this kind of write yet (for example, a backend
+      // endpoint that is still missing). It stays on the device.
+      await _retryLater(item, 'No channel for ${item.type} yet');
+      return _Outcome.retry;
+    }
+
+    await _outbox.markSending(item.id);
+    final Either<Failure, Unit> result;
+    try {
+      result = await handler.send(item);
+    } on Exception catch (error) {
+      await _retryLater(item, '$error');
+      return _Outcome.retry;
+    } on Error catch (error) {
+      // A bug in a handler (for example, a payload of another version) must
+      // not leave the write in `sending` until the app restarts. It goes
+      // back to the queue and the error still reaches the error reporting.
+      await _retryLater(item, '$error');
+      rethrow;
+    }
+
+    switch (result) {
+      case Right():
+        await _outbox.markSent(item.id);
+        return _Outcome.sent;
+      case Left(value: final UnauthorizedFailure failure):
+        await _retryLater(item, failure.message);
+        _emit(_state.copyWith(needsSignIn: true));
+        return _Outcome.unauthorized;
+      case Left(value: final NetworkFailure failure):
+        await _retryLater(item, failure.message, delay: offlineRetryDelay);
+        return _Outcome.offline;
+      case Left(value: final failure) when failure.isRetryable:
+        await _retryLater(item, failure.message);
+        return _Outcome.retry;
+      case Left(value: final failure):
+        await _outbox.markRejected(item.id, failure.message);
+        return _Outcome.rejected;
+    }
+  }
+
+  Future<void> _retryLater(OutboxItem item, String error, {Duration? delay}) {
+    final attempts = item.attempts + 1;
+    return _outbox.reschedule(
+      item.id,
+      attempts: attempts,
+      nextAttemptAt: _clock().add(delay ?? retryDelay(attempts)),
+      error: error,
+    );
+  }
+
+  // Each `await` comes before `_state.copyWith`: copying the state first
+  // and emitting it after the await would bring back an older state, such
+  // as a run that already ended.
+  Future<void> _refreshPending() async {
+    final pending = await _outbox.countUnsent();
+    _emit(_state.copyWith(pending: pending));
+  }
+
+  void _emit(SyncState state) {
+    if (state == _state) return;
+    _state = state;
+    if (!_states.isClosed) _states.add(state);
+  }
+}
+
+enum _Outcome { sent, retry, rejected, offline, unauthorized }

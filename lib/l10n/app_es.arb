@@ -1,0 +1,665 @@
+{
+  "@@locale": "es",
+  "appTitle": "AuxIA",
+  "@appTitle": {
+    "description": "Launcher and window title of the app."
+  },
+  "appTagline": "Auxilio y coordinación offline",
+  "@appTagline": {
+    "description": "ASO subtitle of the app (report 6.2.3)."
+  },
+  "connectionOfflineMode": "Modo Offline Activo",
+  "@connectionOfflineMode": {
+    "description": "Connectivity badge when the app keeps working and saves data locally (report 6.1.2 C)."
+  },
+  "connectionNoSignal": "Sin señal",
+  "@connectionNoSignal": {
+    "description": "Connectivity badge when no sync channel is available (report 6.1.2 C)."
+  },
+  "connectionOnline": "En línea",
+  "@connectionOnline": {
+    "description": "Connectivity badge when the device has network and can sync."
+  },
+  "errorUnexpected": "Ocurrió un problema. Inténtalo de nuevo.",
+  "@errorUnexpected": {
+    "description": "Generic error when the cause is unknown."
+  },
+  "errorNoConnection": "No hay conexión. Lo guardamos y lo enviaremos al recuperar la señal.",
+  "@errorNoConnection": {
+    "description": "Shown when a request fails because the device is offline."
+  },
+  "errorSessionExpired": "Tu sesión venció. Inicia sesión de nuevo para sincronizar.",
+  "@errorSessionExpired": {
+    "description": "Shown when the API answers 401."
+  },
+  "actionContinue": "Continuar",
+  "actionBack": "Volver",
+  "actionCancel": "Cancelar",
+  "registrationTitle": "Crea tu cuenta",
+  "@registrationTitle": {
+    "description": "Title of A_01, registration and role selection."
+  },
+  "registrationSubtitle": "Elige tu rol. Define qué verás y qué podrás hacer.",
+  "fullNameLabel": "Nombre completo",
+  "phoneLabel": "Teléfono",
+  "roleQuestion": "¿Cuál es tu rol?",
+  "roleCitizen": "Ciudadano",
+  "roleCitizenTagline": "Necesito pedir auxilio",
+  "roleCitizenBenefitSos": "SOS con 1 toque, incluso sin señal",
+  "roleCitizenBenefitStatus": "Detallar emergencia y ver el estado de mi ayuda",
+  "roleBrigadist": "Brigadista",
+  "roleBrigadistTagline": "Rescate y entrega de ayuda en campo",
+  "roleBrigadistBenefitMissions": "Misiones priorizadas por IA y navegación",
+  "roleBrigadistBenefitBlockchain": "Verificar entregas en Blockchain",
+  "roleBrigadistApproval": "Requiere aprobación del Centro de Mando",
+  "registrationLocalNote": "Tus datos se guardan en tu dispositivo",
+  "validationNameRequired": "Ingresa tu nombre completo.",
+  "validationNameTooShort": "El nombre es muy corto.",
+  "validationNameTooLong": "El nombre es muy largo.",
+  "validationPhoneRequired": "Ingresa tu teléfono.",
+  "validationPhoneInvalid": "Ingresa un teléfono válido, por ejemplo +51 987 654 321.",
+  "validationOrganizationRequired": "Ingresa tu organismo.",
+  "validationBrigadeCodeRequired": "Ingresa el código de tu brigada.",
+  "validationBrigadeCodeInvalid": "Usa letras, números y guiones, por ejemplo BRG-ALFA-07.",
+  "credentialTitle": "Credencial de brigadista",
+  "@credentialTitle": {
+    "description": "Title of A_02, brigade credential."
+  },
+  "credentialStep": "Paso 2 de 2 · Verifica que perteneces a un organismo de respuesta.",
+  "organizationLabel": "Organismo",
+  "brigadeCodeLabel": "Código de brigada",
+  "scanIdCard": "Escanear carnet institucional",
+  "idCardScanned": "Carnet institucional escaneado",
+  "statusPendingApproval": "Pendiente de aprobación",
+  "credentialPendingDetail": "El administrador de tu organización revisa tu credencial. Funciona sin señal: se envía al sincronizar.",
+  "credentialCanDo": "Con tu cuenta podrás",
+  "credentialCanMissions": "Recibir misiones asignadas por la IA",
+  "credentialCanDeliveries": "Navegar y escanear QR de entregas",
+  "credentialCannot": "Asignar brigadas o editar inventario (solo Centro de Mando)",
+  "actionSendForApproval": "Enviar para aprobación",
+  "actionBackChangeRole": "Volver y cambiar de rol",
+  "idCardCameraError": "No pudimos abrir la cámara. Puedes enviar la credencial sin el carnet.",
+  "navSos": "SOS",
+  "navMyReports": "Mis reportes",
+  "navSettings": "Ajustes",
+  "navMissions": "Misiones",
+  "navDelivery": "Entrega",
+  "sosTitle": "Solicitar Auxilio Urgente",
+  "sosSubtitle": "Un toque. No necesitas señal.",
+  "reportsTitle": "Mis reportes",
+  "reportsEmpty": "Aún no enviaste reportes. Usa el botón SOS cuando necesites ayuda.",
+  "missionsAssigned": "Misiones asignadas",
+  "missionsPendingTitle": "Tu cuenta está pendiente de aprobación",
+  "missionsPendingDetail": "Cuando tu organización cree tu cuenta institucional, inicia sesión para recibir las misiones que te asigne el Centro de Mando.",
+  "missionsPendingCredential": "El administrador de tu organización revisará tu credencial. Cuando la apruebe, entrarás a tus misiones sin escribir contraseña.",
+  "credentialRejectedTitle": "Tu credencial fue rechazada",
+  "credentialRejectedDetail": "Consulta con el administrador de tu organización y vuelve a registrarte.",
+  "actionCheckStatus": "Consultar estado",
+  "deliveryTitle": "Verificar entrega",
+  "deliveryEmpty": "No tienes una entrega en curso. Inicia la navegación de una misión para verificar su entrega.",
+  "settingsTitle": "Red y almacenamiento",
+  "@settingsTitle": {
+    "description": "Title of A_06 and A_09."
+  },
+  "actionChangeRole": "Cambiar de rol",
+  "changeRoleConfirmTitle": "¿Cambiar de rol?",
+  "changeRoleConfirmBody": "Se borrará tu perfil de este dispositivo y volverás a la pantalla de registro.",
+  "actionConfirmChangeRole": "Cambiar de rol",
+  "registrationHaveAccount": "¿Ya tienes cuenta institucional? Inicia sesión",
+  "signInTitle": "Iniciar sesión",
+  "@signInTitle": {
+    "description": "Title of A_10, sign-in of brigadists."
+  },
+  "signInSubtitle": "App de campo para brigadas. Usa la cuenta que te asignó tu organización.",
+  "emailLabel": "Correo institucional",
+  "passwordLabel": "Contraseña",
+  "actionShowPassword": "Mostrar contraseña",
+  "actionHidePassword": "Ocultar contraseña",
+  "actionSignIn": "Ingresar",
+  "signInOfflineNote": "Funciona sin señal después del primer inicio de sesión",
+  "signInNotFieldBrigade": "Esta cuenta no es de una brigada de campo. Ingresa al Centro de Mando desde la web.",
+  "signInNoConnection": "Necesitas señal para el primer inicio de sesión. Después, la app funciona sin conexión.",
+  "validationEmailRequired": "Ingresa tu correo institucional.",
+  "validationEmailInvalid": "Ingresa un correo válido, por ejemplo m.quispe@coerlima.gob.pe.",
+  "validationPasswordRequired": "Ingresa tu contraseña.",
+  "actionGoToSignIn": "Iniciar sesión",
+  "actionSignOut": "Cerrar sesión",
+  "signOutConfirmTitle": "¿Cerrar sesión?",
+  "signOutConfirmBody": "Dejarás de recibir misiones en este dispositivo hasta que vuelvas a iniciar sesión.",
+  "missionsEmpty": "No tienes misiones asignadas. Cuando el Centro de Mando despache tu brigada, aparecerán aquí.",
+  "connectionWithSignal": "Con señal",
+  "offlineSavedLocally": "Guardado localmente · Sincroniza al conectar",
+  "lastSync": "Última sync: {ago}",
+  "@lastSync": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
+  "lastSyncNever": "Última sync: nunca",
+  "timeAgoNow": "hace un momento",
+  "timeAgoMinutes": "hace {count} min",
+  "@timeAgoMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeAgoHours": "hace {count} h",
+  "@timeAgoHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeAgoDays": "hace {count} d",
+  "@timeAgoDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "actionSyncNow": "Sincronizar ahora",
+  "syncPending": "{count, plural, =0{Todo sincronizado} =1{1 pendiente de sync} other{{count} pendientes de sync}}",
+  "@syncPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncInProgress": "Sincronizando",
+  "sosButton": "SOS",
+  "sosOneTap": "1 toque",
+  "sosButtonSemantics": "Pedir auxilio: enviar SOS de {category}",
+  "@sosButtonSemantics": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryMedical": "Médico",
+  "categoryRescue": "Rescate",
+  "categorySupplies": "Víveres",
+  "gpsSaved": "GPS {coordinates} · guardado",
+  "@gpsSaved": {
+    "placeholders": {
+      "coordinates": {
+        "type": "String"
+      }
+    }
+  },
+  "gpsLocating": "Buscando señal GPS…",
+  "gpsUnavailable": "GPS no disponible · el SOS se envía sin ubicación",
+  "gpsPermissionDenied": "Activa la ubicación para enviar tu posición con el SOS",
+  "sosQueue": "{count, plural, =0{Sin reportes en cola} =1{1 reporte en cola · sincroniza al conectar} other{{count} reportes en cola · sincroniza al conectar}}",
+  "@sosQueue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "detailTitle": "Detalle de emergencia",
+  "detailIntro": "Opcional · Si no tienes tiempo, toca Enviar. Todo se guarda sin señal.",
+  "detailWhoNeedsHelp": "¿Quiénes necesitan ayuda?",
+  "detailChildren": "Niños",
+  "detailElderly": "Adultos mayores",
+  "detailInjured": "Heridos",
+  "detailAccess": "Estado de acceso",
+  "accessRoadBlocked": "Vía bloqueada",
+  "accessNoDrinkingWater": "Sin agua potable",
+  "accessNoCellSignal": "Sin señal celular",
+  "accessDamagedBuilding": "Edificio dañado",
+  "detailEvidence": "Evidencia rápida (opcional)",
+  "evidenceAudio": "Audio · 5 s",
+  "evidenceAudioHint": "Mantén o toca para grabar",
+  "evidenceAudioRecording": "Grabando… suelta o toca para terminar",
+  "evidenceAudioSaved": "Audio guardado",
+  "evidencePhoto": "Foto rápida",
+  "evidencePhotoHint": "1 toque",
+  "evidencePhotoSaved": "Foto guardada",
+  "actionSaveAndSend": "Guardar y Enviar Auxilio",
+  "detailFootnote": "Se guarda en tu dispositivo y se envía al detectar señal",
+  "counterDecrease": "Quitar uno de {label}",
+  "@counterDecrease": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "counterIncrease": "Agregar uno a {label}",
+  "@counterIncrease": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "microphoneDenied": "Activa el permiso del micrófono para grabar el audio.",
+  "cameraError": "No pudimos abrir la cámara.",
+  "sosSavedChip": "SOS {code} guardado",
+  "@sosSavedChip": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "reportsChannels": "Canales de sincronización",
+  "channelCellular": "Celular",
+  "channelWifi": "Wi-Fi",
+  "channelMesh": "Mesh",
+  "channelSatellite": "Satélite",
+  "channelUnavailable": "{channel} · no disponible",
+  "@channelUnavailable": {
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "channelSatelliteUnavailable": "Satélite · no disponible en este dispositivo",
+  "@channelSatelliteUnavailable": {
+    "description": "A phone does not let an app send by satellite (plan D5)."
+  },
+  "channelMeshUnsupported": "Mesh · solo en Android",
+  "channelMeshOff": "Mesh · desactivado",
+  "channelMeshSearching": "Mesh · buscando teléfonos",
+  "channelMeshPeers": "{count, plural, =1{Mesh · 1 teléfono cerca} other{Mesh · {count} teléfonos cerca}}",
+  "@channelMeshPeers": {
+    "description": "Nearby phones with AuxIA connected by Mesh (plan D5).",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "meshSwitch": "Compartir SOS por Mesh",
+  "meshSwitchDetail": "Sin señal, los SOS pasan por Bluetooth a teléfonos cercanos con AuxIA hasta que uno con señal los envía.",
+  "meshPermissionDenied": "Para usar Mesh, permite Bluetooth y dispositivos cercanos en los ajustes del teléfono.",
+  "channelsTitle": "Canales de comunicación",
+  "@channelsTitle": {
+    "description": "A_06 / A_09: section of the sync channels (6.4.4)."
+  },
+  "channelsHint": "Sin señal, tus datos esperan en el teléfono y se envían solos al volver la conexión.",
+  "settingsSaved": "Configuración guardada",
+  "@settingsSaved": {
+    "description": "A_06 / A_09: a setting was saved (6.4.4)."
+  },
+  "actionForceRetry": "Forzar reintento de sincronización",
+  "reportsQueue": "{count, plural, =1{Cola local · 1 reporte} other{Cola local · {count} reportes}}",
+  "@reportsQueue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportTitle": "{code} · {category}",
+  "@reportTitle": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "statusSaved": "Guardado en dispositivo",
+  "statusRetrying": "Reintento de envío · intento {attempts}",
+  "@statusRetrying": {
+    "description": "A_05: a saved report whose sending failed and is retried (6.4.4).",
+    "placeholders": {
+      "attempts": {
+        "type": "int"
+      }
+    }
+  },
+  "statusSendFailed": "No se pudo enviar",
+  "@statusSendFailed": {
+    "description": "A_05: the backend refused the report."
+  },
+  "statusTransmitting": "Transmitiendo…",
+  "statusReceived": "Recibido · esperando prioridad",
+  "@statusReceived": {
+    "description": "A_05: the backend has the report, the AI has not prioritized it yet."
+  },
+  "statusPrioritized": "Priorizado por IA · {score}",
+  "@statusPrioritized": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "statusPrioritizedNoScore": "Priorizado por IA",
+  "statusAccepted": "Aceptado por el centro de mando · {time}",
+  "@statusAccepted": {
+    "description": "A_05: an authority approved a plan for the zone of the SOS; time of the approval.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "statusAcceptedNoTime": "Aceptado por el centro de mando",
+  "statusBrigade": "Brigada en camino · ETA {minutes} min",
+  "@statusBrigade": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "statusBrigadeNoEta": "Brigada en camino",
+  "reportNoLocation": "Sin ubicación GPS",
+  "reportEvidenceSaved": "Evidencia guardada en tu dispositivo",
+  "reportPeople": "{label}: {count}",
+  "@reportPeople": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportProgress": "Paso {step} de 4",
+  "@reportProgress": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      }
+    }
+  },
+  "missionsOnMap": "{count, plural, =0{Sin misiones · Urgency Score IA} =1{1 misión · Urgency Score IA} other{{count} misiones · Urgency Score IA}}",
+  "@missionsOnMap": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "missionsOfflineSaved": "Offline · guardadas",
+  "missionsUpdated": "Actualizado {ago}",
+  "@missionsUpdated": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
+  "missionWhyPriority": "Por qué esta prioridad",
+  "missionNoExplanation": "Prioridad asignada por el Centro de Mando.",
+  "damageLow": "Daño leve",
+  "damageModerate": "Daño moderado",
+  "damageSevere": "Daño severo",
+  "damageCritical": "Daño crítico",
+  "reasonPeopleAffected": "{count, plural, =1{1 persona afectada} other{{count} personas afectadas}}",
+  "@reasonPeopleAffected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reasonNeeds": "necesidades urgentes",
+  "pillChildren": "{count, plural, =1{1 niño} other{{count} niños}}",
+  "@pillChildren": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pillElderly": "{count, plural, =1{1 adulto mayor} other{{count} adultos mayores}}",
+  "@pillElderly": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pillDisabled": "{count, plural, =1{1 con discapacidad} other{{count} con discapacidad}}",
+  "@pillDisabled": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "missionDistance": "{km} km · {minutes} min",
+  "@missionDistance": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "missionGps": "GPS {coordinates}",
+  "@missionGps": {
+    "placeholders": {
+      "coordinates": {
+        "type": "String"
+      }
+    }
+  },
+  "priorityLow": "Prioridad baja",
+  "priorityMedium": "Prioridad media",
+  "priorityHigh": "Prioridad alta",
+  "priorityCritical": "Prioridad crítica",
+  "missionItems": "Recursos a entregar",
+  "missionItem": "{quantity} {unit} · {name}",
+  "@missionItem": {
+    "placeholders": {
+      "quantity": {
+        "type": "int"
+      },
+      "unit": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "unitUnit": "u.",
+  "unitKg": "kg",
+  "unitLiter": "L",
+  "unitKit": "kits",
+  "actionStartNavigation": "Iniciar navegación",
+  "actionVerifyDelivery": "Verificar entrega",
+  "actionOpenNavigation": "Abrir navegación",
+  "missionNavigating": "Navegación en curso",
+  "missionCompleted": "Misión completada",
+  "missionsNoBrigadeTitle": "Tu cuenta aún no está en una brigada",
+  "missionsNoBrigadeDetail": "Pide al administrador de tu organización que te agregue como integrante de tu brigada. Tus misiones aparecerán aquí.",
+  "missionDeliveryPending": "La entrega se habilitará cuando el Centro de Mando la abra.",
+  "reasonDamage": "Daño en la zona",
+  "missionCategoryAgo": "{category} · {ago}",
+  "@missionCategoryAgo": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
+  "missionsRefreshError": "No pudimos actualizar las misiones. Mostramos las guardadas en tu dispositivo.",
+  "mapRecenter": "Centrar mapa",
+  "mapMyLocation": "Tu ubicación",
+  "mapMissionMarker": "{zone}, Urgency Score {score}",
+  "@mapMissionMarker": {
+    "placeholders": {
+      "zone": {
+        "type": "String"
+      },
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "navigationUnavailable": "No pudimos abrir la navegación en este dispositivo.",
+  "deliveryStepScan": "1 · Escaneo",
+  "deliveryStepEvidence": "2 · Evidencia",
+  "deliveryStepBlockchain": "3 · Blockchain",
+  "deliveryScanHint": "Apunta la cámara al código QR del paquete.",
+  "deliveryManualCode": "Ingresar el código a mano",
+  "deliveryCodeLabel": "Código de la entrega",
+  "actionConfirm": "Confirmar",
+  "deliveryWrongQr": "Este código no corresponde a esta entrega.",
+  "deliveryCameraUnavailable": "La cámara no está disponible. Ingresa el código a mano.",
+  "deliveryPackage": "Entrega {code} · {zone}",
+  "@deliveryPackage": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "zone": {
+        "type": "String"
+      }
+    }
+  },
+  "deliveryRoute": "Almacén → {brigade} → Beneficiario",
+  "@deliveryRoute": {
+    "placeholders": {
+      "brigade": {
+        "type": "String"
+      }
+    }
+  },
+  "deliveryQuantities": "Cantidades entregadas",
+  "deliverySignature": "Firma del beneficiario",
+  "deliverySignatureHint": "Toca para firmar",
+  "deliveryPhoto": "Foto de recepción",
+  "deliveryPhotoHint": "Toca para tomar la foto",
+  "actionClear": "Limpiar",
+  "actionSave": "Guardar",
+  "actionRegisterDelivery": "Registrar entrega",
+  "deliveryEvidenceMissing": "Falta la firma del beneficiario o la foto de recepción.",
+  "deliveryLocationFound": "Ubicación GPS · {coordinates}",
+  "@deliveryLocationFound": {
+    "description": "A_08: place of the delivery (US-15).",
+    "placeholders": {
+      "coordinates": {
+        "type": "String"
+      }
+    }
+  },
+  "deliveryLocating": "Buscando ubicación GPS…",
+  "deliveryLocationMissing": "Sin ubicación GPS",
+  "deliveryNoLocationTitle": "¿Registrar sin ubicación?",
+  "deliveryNoLocationBody": "No se pudo obtener la ubicación GPS. La entrega quedará registrada sin coordenadas.",
+  "actionRegisterWithoutLocation": "Registrar sin ubicación",
+  "actionRetry": "Reintentar",
+  "deliveryQueued": "Entrega guardada · se registrará al detectar señal",
+  "deliveryCompleted": "Entrega registrada · misión completada",
+  "@deliveryCompleted": {
+    "description": "A_08: the delivery reached the backend, so the mission of the brigade is over (heuristic evaluation, problem #7)."
+  },
+  "deliveryProofPending": "Se está guardando la prueba de la entrega en blockchain.",
+  "deliveryProofSaved": "Este registro prueba que la ayuda llegó y nadie puede modificarlo.",
+  "deliveryProofRetrying": "La prueba en blockchain se reintentará sola; no tienes que hacer nada.",
+  "deliveryTechnicalDetail": "Detalle técnico (hash y transacción)",
+  "deliveryRejected": "El Centro de Mando no aceptó la entrega: {reason}",
+  "@deliveryRejected": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "deliveryChain": "Entrega {code} · Almacén → Brigada → Beneficiario",
+  "@deliveryChain": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "deliveryHash": "Hash del registro",
+  "deliveryTransaction": "Ver transacción en Sepolia",
+  "actionVerifyIntegrity": "Comprobar el registro",
+  "deliveryVerifying": "Comparando el registro con el guardado en blockchain…",
+  "deliveryVerified": "Comprobado: el registro no cambió desde la entrega",
+  "deliveryTampered": "Atención: el registro cambió después de guardarse. Avisa al Centro de Mando",
+  "deliveryNotAnchoredYet": "Todavía no se puede comprobar: la prueba aún no está guardada en blockchain",
+  "deliveryVerifyFailed": "No se pudo verificar ahora. Inténtalo de nuevo en un momento.",
+  "deliveryAnchoredAgo": "Anclado {ago}",
+  "@deliveryAnchoredAgo": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
+  "actionNextMission": "Siguiente misión",
+  "actionCorrectDelivery": "Corregir y registrar de nuevo",
+  "@actionCorrectDelivery": {
+    "description": "A_08: the backend refused the delivery; back to its evidence."
+  },
+  "actionRefreshStatus": "Actualizar estado",
+  "actionScanAgain": "Escanear de nuevo",
+  "mapsCitizenTitle": "Mapas offline por región",
+  "mapsBrigadeTitle": "Mapas de tu zona asignada",
+  "regionMyLocation": "Mi ubicación",
+  "regionOffline": "Disponible offline · mapa dibujado en el teléfono",
+  "@regionOffline": {
+    "description": "Status of a region on A_06 / A_09: the stylized map needs no download."
+  },
+  "regionAssigned": "{name} · Asignada",
+  "@regionAssigned": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mapsNoRegions": "Activa el GPS para ver el mapa de tu ubicación.",
+  "localDatabase": "Datos guardados en tu teléfono",
+  "statLocalReports": "Reportes guardados",
+  "statPendingSync": "Pendientes de envío",
+  "statDbSize": "Espacio usado",
+  "statIntegrity": "Protección",
+  "integrityOk": "Protegidos con cifrado",
+  "integrityFailed": "Revisar",
+  "statLocalMissions": "Misiones guardadas",
+  "statEvidenceToUpload": "Evidencias por enviar",
+  "statBlockchainQueue": "Entregas por certificar",
+  "servicesTitle": "Conexión con el Centro de Mando",
+  "serviceBackend": "Backend AuxIA",
+  "serviceAi": "Servicio de IA",
+  "serviceUp": "Disponible",
+  "serviceDown": "Sin respuesta",
+  "serviceChecking": "Comprobando…",
+  "serviceUnknown": "Sin comprobar",
+  "servicesAllUp": "Todo funciona: tus datos llegan al Centro de Mando.",
+  "servicesOffline": "Sin conexión con el Centro de Mando: lo que registres se guarda en tu teléfono y se enviará solo.",
+  "servicesSupportDetail": "Detalle para soporte técnico",
+  "servicesCheckedAgo": "Comprobado {ago}",
+  "@servicesCheckedAgo": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
+  "actionCheckServices": "Comprobar de nuevo",
+  "languageTitle": "Idioma",
+  "languageSpanish": "Español",
+  "languageEnglish": "English"
+}

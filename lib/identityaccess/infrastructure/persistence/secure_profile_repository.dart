@@ -1,0 +1,98 @@
+import 'dart:convert';
+
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import '../../domain/model/brigade_credential.dart';
+import '../../domain/model/local_profile.dart';
+import '../../domain/model/user_role.dart';
+import '../../domain/model/valueobjects.dart';
+import '../../domain/repositories/profile_repository.dart';
+
+/// Keeps the profile in the encrypted storage of the device (Android
+/// Keystore, iOS Keychain), because it holds the name and phone number.
+class SecureProfileRepository implements ProfileRepository {
+  SecureProfileRepository(this._storage);
+
+  static const String _key = 'auxia.profile.v1';
+
+  final FlutterSecureStorage _storage;
+
+  @override
+  Future<LocalProfile?> load() async {
+    final raw = await _storage.read(key: _key);
+    if (raw == null) return null;
+    return ProfileJson.fromJson(jsonDecode(raw) as Map<String, Object?>);
+  }
+
+  @override
+  Future<void> save(LocalProfile profile) =>
+      _storage.write(key: _key, value: jsonEncode(profile.toJson()));
+
+  @override
+  Future<void> clear() => _storage.delete(key: _key);
+}
+
+/// JSON mapping of the profile, kept out of the domain model.
+extension ProfileJson on LocalProfile {
+  Map<String, Object?> toJson() => {
+    'fullName': fullName.value,
+    'phone': phone?.value,
+    'role': role.name,
+    'createdAt': createdAt.toIso8601String(),
+    if (credential case final credential?)
+      'credential': {
+        'registrationId': credential.registrationId,
+        'deviceSecret': credential.deviceSecret,
+        'organization': credential.organization.value,
+        'brigadeCode': credential.brigadeCode.value,
+        'submittedAt': credential.submittedAt.toIso8601String(),
+        'idCardPhotoPath': credential.idCardPhotoPath,
+        'status': credential.status.name,
+        'rejectionReason': credential.rejectionReason,
+      },
+  };
+
+  static LocalProfile fromJson(Map<String, Object?> json) {
+    final profile = LocalProfile(
+      fullName: FullName(json['fullName']! as String),
+      phone: switch (json['phone']) {
+        final String phone => PhoneNumber(phone),
+        _ => null,
+      },
+      role: UserRole.fromName(json['role']! as String),
+      createdAt: DateTime.parse(json['createdAt']! as String),
+    );
+    final credential = json['credential'] as Map<String, Object?>?;
+    if (credential == null) return profile;
+    final organization = OrganizationName(
+      credential['organization']! as String,
+    );
+    final brigadeCode = BrigadeCode(credential['brigadeCode']! as String);
+    final submittedAt = DateTime.parse(credential['submittedAt']! as String);
+    // A credential saved before the registration endpoint existed has no
+    // ids yet: it gets new ones and is sent as a new registration.
+    final registrationId = credential['registrationId'] as String?;
+    if (registrationId == null) {
+      return profile.withCredential(
+        BrigadeCredential.create(
+          organization: organization,
+          brigadeCode: brigadeCode,
+          now: submittedAt,
+          idCardPhotoPath: credential['idCardPhotoPath'] as String?,
+        ),
+      );
+    }
+    return profile.withCredential(
+      BrigadeCredential(
+        registrationId: registrationId,
+        deviceSecret: credential['deviceSecret']! as String,
+        organization: organization,
+        brigadeCode: brigadeCode,
+        submittedAt: submittedAt,
+        idCardPhotoPath: credential['idCardPhotoPath'] as String?,
+        status: CredentialStatus.fromName(credential['status']! as String),
+        rejectionReason: credential['rejectionReason'] as String?,
+      ),
+    );
+  }
+}
