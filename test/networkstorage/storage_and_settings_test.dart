@@ -201,9 +201,11 @@ void main() {
         find.text('Satélite · no disponible en este dispositivo'),
         findsOneWidget,
       );
-      expect(find.text('BASE DE DATOS LOCAL · SQLITE'), findsOneWidget);
-      expect(find.text('Reportes locales'), findsOneWidget);
-      expect(find.text('Cifrada · OK'), findsOneWidget);
+      expect(find.text('DATOS GUARDADOS EN TU TELÉFONO'), findsOneWidget);
+      expect(find.text('Reportes guardados'), findsOneWidget);
+      expect(find.text('Pendientes de envío'), findsOneWidget);
+      expect(find.text('Protegidos con cifrado'), findsOneWidget);
+      expect(find.textContaining('SQLite'), findsNothing);
       expect(find.text('Sincronizar ahora'), findsOneWidget);
     });
 
@@ -211,7 +213,18 @@ void main() {
       final probe = FakeServiceHealthProbe()..down.add(CloudService.aiService);
       await pump(tester, UserRole.brigadist, probe: probe);
 
-      expect(find.text('SERVICIOS EN LA NUBE'), findsOneWidget);
+      expect(find.text('CONEXIÓN CON EL CENTRO DE MANDO'), findsOneWidget);
+      expect(
+        find.text(
+          'Sin conexión con el Centro de Mando: lo que registres se guarda '
+          'en tu teléfono y se enviará solo.',
+        ),
+        findsOneWidget,
+      );
+      // The health of each service is folded for technical support.
+      expect(find.text('Backend AuxIA'), findsNothing);
+      await tester.tap(find.text('Detalle para soporte técnico'));
+      await tester.pumpAndSettle();
       expect(find.text('Backend AuxIA'), findsOneWidget);
       expect(find.text('Disponible'), findsOneWidget);
       expect(find.text('Sin respuesta'), findsOneWidget);
@@ -220,6 +233,10 @@ void main() {
       await tester.tap(find.text('Comprobar de nuevo'));
       await tester.pumpAndSettle();
 
+      expect(
+        find.text('Todo funciona: tus datos llegan al Centro de Mando.'),
+        findsOneWidget,
+      );
       expect(find.text('Disponible'), findsNWidgets(2));
     });
 
@@ -230,8 +247,8 @@ void main() {
 
       expect(find.text('MAPAS DE TU ZONA ASIGNADA'), findsOneWidget);
       expect(find.text('Sector Norte · Asignada'), findsOneWidget);
-      expect(find.text('Evidencias por subir'), findsOneWidget);
-      expect(find.text('Tx Blockchain en cola'), findsOneWidget);
+      expect(find.text('Evidencias por enviar'), findsOneWidget);
+      expect(find.text('Entregas por certificar'), findsOneWidget);
     });
 
     testWidgets('the language can be switched to english', (tester) async {

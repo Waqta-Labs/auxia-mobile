@@ -171,18 +171,43 @@ class _ServicesCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final checkedAt = status.checkedAt;
 
+    // One line with what it means for the user; the health of each service
+    // is a detail for technical support (heuristic evaluation, problem #8).
+    final (summary, color) = switch (status.overall) {
+      ServiceHealth.up => (l10n.servicesAllUp, AppColors.emerald),
+      ServiceHealth.down => (l10n.servicesOffline, AppColors.coral),
+      ServiceHealth.checking => (l10n.serviceChecking, AppColors.textSecondary),
+      ServiceHealth.unknown => (l10n.serviceUnknown, AppColors.textSecondary),
+    };
+
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (final service in CloudService.values)
-            _ServiceRow(
-              name: switch (service) {
-                CloudService.backend => l10n.serviceBackend,
-                CloudService.aiService => l10n.serviceAi,
-              },
-              health: status.of(service),
+          Text(summary, style: textTheme.bodyMedium?.copyWith(color: color)),
+          Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: EdgeInsets.zero,
+              title: Text(
+                l10n.servicesSupportDetail,
+                style: textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              children: [
+                for (final service in CloudService.values)
+                  _ServiceRow(
+                    name: switch (service) {
+                      CloudService.backend => l10n.serviceBackend,
+                      CloudService.aiService => l10n.serviceAi,
+                    },
+                    health: status.of(service),
+                  ),
+              ],
             ),
+          ),
           if (checkedAt != null)
             Text(
               l10n.servicesCheckedAgo(timeAgo(l10n, checkedAt, DateTime.now())),

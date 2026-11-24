@@ -18,6 +18,18 @@ final class ServiceStatus extends Equatable {
 
   bool get checking => health.values.contains(ServiceHealth.checking);
 
+  /// One health for the whole cloud, as the user needs it: down when any
+  /// service did not answer, up only when every service answered.
+  ServiceHealth get overall {
+    if (checking) return ServiceHealth.checking;
+    final all = CloudService.values.map(of);
+    if (all.contains(ServiceHealth.down)) return ServiceHealth.down;
+    if (all.every((health) => health == ServiceHealth.up)) {
+      return ServiceHealth.up;
+    }
+    return ServiceHealth.unknown;
+  }
+
   @override
   List<Object?> get props => [health, checkedAt];
 }
