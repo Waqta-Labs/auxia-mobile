@@ -341,6 +341,16 @@
     }
   },
   "statusPrioritizedNoScore": "Priorizado por IA",
+  "statusAccepted": "Aceptado por el centro de mando · {time}",
+  "@statusAccepted": {
+    "description": "A_05: an authority approved a plan for the zone of the SOS; time of the approval.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "statusAcceptedNoTime": "Aceptado por el centro de mando",
   "statusBrigade": "Brigada en camino · ETA {minutes} min",
   "@statusBrigade": {
     "placeholders": {

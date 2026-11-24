@@ -154,6 +154,7 @@ class MyReportsService {
       final followed =
           report.status == CitizenReportStatus.received ||
           report.status == CitizenReportStatus.prioritized ||
+          report.status == CitizenReportStatus.accepted ||
           report.status == CitizenReportStatus.brigadeOnTheWay;
       if (!followed) continue;
 
@@ -165,6 +166,7 @@ class MyReportsService {
             remote.status,
             score: remote.score,
             etaMinutes: remote.etaMinutes,
+            acceptedAt: remote.acceptedAt,
           ),
         );
       } else {

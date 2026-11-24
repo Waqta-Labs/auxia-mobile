@@ -166,6 +166,8 @@
   "statusReceived": "Received · awaiting priority",
   "statusPrioritized": "Prioritized by AI · {score}",
   "statusPrioritizedNoScore": "Prioritized by AI",
+  "statusAccepted": "Accepted by the command center · {time}",
+  "statusAcceptedNoTime": "Accepted by the command center",
   "statusBrigade": "Brigade on the way · ETA {minutes} min",
   "statusBrigadeNoEta": "Brigade on the way",
   "reportNoLocation": "No GPS location",

@@ -6,7 +6,12 @@ import '../model/citizen_report.dart';
 
 /// Status of a citizen report as the backend knows it.
 final class RemoteReportStatus extends Equatable {
-  const RemoteReportStatus({required this.status, this.score, this.etaMinutes});
+  const RemoteReportStatus({
+    required this.status,
+    this.score,
+    this.etaMinutes,
+    this.acceptedAt,
+  });
 
   final CitizenReportStatus status;
 
@@ -17,8 +22,11 @@ final class RemoteReportStatus extends Equatable {
   /// 30 km/h, plan D1); null without coordinates.
   final int? etaMinutes;
 
+  /// When an authority approved the plan of the zone that answers the SOS.
+  final DateTime? acceptedAt;
+
   @override
-  List<Object?> get props => [status, score, etaMinutes];
+  List<Object?> get props => [status, score, etaMinutes, acceptedAt];
 }
 
 /// Port to the public citizen report endpoints of the backend.

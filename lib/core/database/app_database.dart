@@ -102,6 +102,8 @@ class AppDatabase {
       )
       ''',
     ],
+    // Version 7: when the Centro de Mando accepted the SOS (A_05).
+    ['ALTER TABLE citizen_reports ADD COLUMN accepted_at INTEGER'],
   ];
 
   static int get version => migrations.length;

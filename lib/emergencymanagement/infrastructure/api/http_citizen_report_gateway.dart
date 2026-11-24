@@ -131,11 +131,16 @@ RemoteReportStatus remoteStatusFromJson(Map<String, Object?> json) =>
     RemoteReportStatus(
       status: switch (json['status']) {
         'PRIORITIZED' => CitizenReportStatus.prioritized,
+        'ACCEPTED' => CitizenReportStatus.accepted,
         'BRIGADE_ON_THE_WAY' => CitizenReportStatus.brigadeOnTheWay,
         _ => CitizenReportStatus.received,
       },
       score: (json['score'] as num?)?.toDouble(),
       etaMinutes: (json['etaMinutes'] as num?)?.toInt(),
+      acceptedAt: switch (json['acceptedAt']) {
+        final String raw => _backendTime(raw),
+        _ => null,
+      },
     );
 
 /// Content type of an evidence file, from its extension. The backend reads
@@ -160,3 +165,7 @@ String _localDateTime(DateTime time) {
   final iso = time.toUtc().toIso8601String();
   return iso.substring(0, 19);
 }
+
+/// Reads a backend `LocalDateTime` (UTC without zone).
+DateTime _backendTime(String raw) =>
+    DateTime.parse(raw.endsWith('Z') || raw.contains('+') ? raw : '${raw}Z');
