@@ -230,6 +230,41 @@ void main() {
       expect(updated.etaMinutes, 12);
     });
 
+    test('keeps when the command center accepted the SOS', () async {
+      final report = await newSos();
+      await reports.save(report.withStatus(CitizenReportStatus.prioritized));
+      final acceptedAt = DateTime.utc(2026, 11, 24, 19, 32);
+      gateway.statuses[report.id] = Right(
+        RemoteReportStatus(
+          status: CitizenReportStatus.accepted,
+          score: 48,
+          acceptedAt: acceptedAt,
+        ),
+      );
+
+      await MyReportsService(reports, gateway).refreshStatuses();
+
+      final accepted = (await reports.find(report.id))!;
+      expect(accepted.status, CitizenReportStatus.accepted);
+      expect(accepted.acceptedAt, acceptedAt.toLocal());
+
+      gateway.statuses[report.id] = Right(
+        RemoteReportStatus(
+          status: CitizenReportStatus.brigadeOnTheWay,
+          etaMinutes: 12,
+          acceptedAt: acceptedAt,
+        ),
+      );
+      await MyReportsService(reports, gateway).refreshStatuses();
+      expect((await reports.find(report.id))!.acceptedAt, isNotNull);
+
+      gateway.statuses[report.id] = const Right(
+        RemoteReportStatus(status: CitizenReportStatus.prioritized, score: 48),
+      );
+      await MyReportsService(reports, gateway).refreshStatuses();
+      expect((await reports.find(report.id))!.acceptedAt, isNull);
+    });
+
     test('skips a report the backend does not know', () async {
       final unknown = await newSos();
       final known = await newSos();
