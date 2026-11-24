@@ -557,9 +557,14 @@
   "actionRegisterWithoutLocation": "Registrar sin ubicación",
   "actionRetry": "Reintentar",
   "deliveryQueued": "Entrega guardada · se registrará al detectar señal",
-  "deliveryAnchoring": "Registrada · anclando el hash en Blockchain…",
-  "deliveryAnchored": "Validado e Inmutable en Blockchain",
-  "deliveryAnchorFailed": "Registrada · el servidor reintentará el anclaje en Blockchain",
+  "deliveryCompleted": "Entrega registrada · misión completada",
+  "@deliveryCompleted": {
+    "description": "A_08: the delivery reached the backend, so the mission of the brigade is over (heuristic evaluation, problem #7)."
+  },
+  "deliveryProofPending": "Se está guardando la prueba de la entrega en blockchain.",
+  "deliveryProofSaved": "Este registro prueba que la ayuda llegó y nadie puede modificarlo.",
+  "deliveryProofRetrying": "La prueba en blockchain se reintentará sola; no tienes que hacer nada.",
+  "deliveryTechnicalDetail": "Detalle técnico (hash y transacción)",
   "deliveryRejected": "El Centro de Mando no aceptó la entrega: {reason}",
   "@deliveryRejected": {
     "placeholders": {
@@ -578,11 +583,11 @@
   },
   "deliveryHash": "Hash del registro",
   "deliveryTransaction": "Ver transacción en Sepolia",
-  "actionVerifyIntegrity": "Verificar integridad",
-  "deliveryVerifying": "Comparando con el hash del contrato en Sepolia…",
-  "deliveryVerified": "Integridad verificada · coincide con el hash anclado en Blockchain",
-  "deliveryTampered": "No verificable · el hash actual no coincide con el anclado en Blockchain",
-  "deliveryNotAnchoredYet": "Pendiente de verificación · aún no hay un hash anclado en Blockchain",
+  "actionVerifyIntegrity": "Comprobar el registro",
+  "deliveryVerifying": "Comparando el registro con el guardado en blockchain…",
+  "deliveryVerified": "Comprobado: el registro no cambió desde la entrega",
+  "deliveryTampered": "Atención: el registro cambió después de guardarse. Avisa al Centro de Mando",
+  "deliveryNotAnchoredYet": "Todavía no se puede comprobar: la prueba aún no está guardada en blockchain",
   "deliveryVerifyFailed": "No se pudo verificar ahora. Inténtalo de nuevo en un momento.",
   "deliveryAnchoredAgo": "Anclado {ago}",
   "@deliveryAnchoredAgo": {

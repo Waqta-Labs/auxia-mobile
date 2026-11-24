@@ -528,18 +528,26 @@ void main() {
     await delivery.refresh();
     await tester.pumpAndSettle();
 
-    expect(find.text('Validado e Inmutable en Blockchain'), findsOneWidget);
+    expect(find.text('Entrega registrada · misión completada'), findsOneWidget);
+    expect(
+      find.text(
+        'Este registro prueba que la ayuda llegó y nadie puede modificarlo.',
+      ),
+      findsOneWidget,
+    );
+    // The hash is a technical detail, folded until the brigadist opens it.
+    expect(find.text('0x7f3a…c91e'), findsNothing);
+    await tester.tap(find.text('Detalle técnico (hash y transacción)'));
+    await tester.pumpAndSettle();
     expect(find.text('0x7f3a…c91e'), findsOneWidget);
     expect(find.text('3 · Blockchain ✓'), findsOneWidget);
     expect(find.text('Siguiente misión'), findsOneWidget);
 
-    await tester.tap(find.text('Verificar integridad'));
+    await tester.tap(find.text('Comprobar el registro'));
     await tester.pumpAndSettle();
 
     expect(
-      find.text(
-        'Integridad verificada · coincide con el hash anclado en Blockchain',
-      ),
+      find.text('Comprobado: el registro no cambió desde la entrega'),
       findsOneWidget,
     );
   });

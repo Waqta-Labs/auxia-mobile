@@ -615,29 +615,36 @@ class _BlockchainCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final textTheme = Theme.of(context).textTheme;
 
-    final (title, tone, icon) = switch (record.status) {
+    // The title says what it means for the brigadist (the mission is over);
+    // the note says what the record proves, without Blockchain jargon.
+    final (title, note, tone, icon) = switch (record.status) {
       DeliveryRecordStatus.queued => (
         l10n.deliveryQueued,
+        null,
         AppCardTone.info,
         Icons.cloud_upload_outlined,
       ),
       DeliveryRecordStatus.registered => (
-        l10n.deliveryAnchoring,
+        l10n.deliveryCompleted,
+        l10n.deliveryProofPending,
         AppCardTone.info,
         Icons.hourglass_top,
       ),
       DeliveryRecordStatus.anchored => (
-        l10n.deliveryAnchored,
+        l10n.deliveryCompleted,
+        l10n.deliveryProofSaved,
         AppCardTone.success,
         Icons.verified,
       ),
       DeliveryRecordStatus.anchorFailed => (
-        l10n.deliveryAnchorFailed,
+        l10n.deliveryCompleted,
+        l10n.deliveryProofRetrying,
         AppCardTone.info,
         Icons.sync_problem,
       ),
       DeliveryRecordStatus.rejected => (
         l10n.deliveryRejected(record.rejection ?? ''),
+        null,
         AppCardTone.deep,
         Icons.error_outline,
       ),
@@ -678,6 +685,7 @@ class _BlockchainCard extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
+                      if (note != null) Text(note, style: textTheme.bodyMedium),
                       Text(
                         l10n.deliveryChain(record.order.shortCode),
                         style: textTheme.bodySmall?.copyWith(
@@ -689,47 +697,70 @@ class _BlockchainCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (hash != null) ...[
-              const SizedBox(height: AppSpacing.sm),
-              AppCard(
-                tone: AppCardTone.deep,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
-                ),
-                child: Row(
+            if (hash != null)
+              // The hash and the transaction stay as a detail for auditors.
+              Theme(
+                data: Theme.of(
+                  context,
+                ).copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  tilePadding: EdgeInsets.zero,
+                  childrenPadding: EdgeInsets.zero,
+                  title: Text(
+                    l10n.deliveryTechnicalDetail,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                   children: [
-                    Expanded(
-                      child: Semantics(
-                        label: '${l10n.deliveryHash}: $hash',
-                        excludeSemantics: true,
-                        child: Text(
-                          _short(hash),
-                          style: textTheme.titleMedium?.copyWith(
-                            color: AppColors.skyBlue,
-                            fontFeatures: const [FontFeature.tabularFigures()],
+                    AppCard(
+                      tone: AppCardTone.deep,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.sm,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Semantics(
+                              label: '${l10n.deliveryHash}: $hash',
+                              excludeSemantics: true,
+                              child: Text(
+                                _short(hash),
+                                style: textTheme.titleMedium?.copyWith(
+                                  color: AppColors.skyBlue,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                          if (record.anchoredAt != null)
+                            Text(
+                              l10n.deliveryAnchoredAgo(
+                                timeAgo(
+                                  l10n,
+                                  record.anchoredAt!,
+                                  DateTime.now(),
+                                ),
+                              ),
+                              style: textTheme.bodySmall?.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                    if (record.anchoredAt != null)
-                      Text(
-                        l10n.deliveryAnchoredAgo(
-                          timeAgo(l10n, record.anchoredAt!, DateTime.now()),
-                        ),
-                        style: textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
+                    if (record.transactionHash != null)
+                      TextButton.icon(
+                        onPressed: () =>
+                            onOpenTransaction(record.transactionHash!),
+                        icon: const Icon(Icons.open_in_new, size: 18),
+                        label: Text(l10n.deliveryTransaction),
                       ),
                   ],
                 ),
-              ),
-            ],
-            if (record.transactionHash != null)
-              TextButton.icon(
-                onPressed: () => onOpenTransaction(record.transactionHash!),
-                icon: const Icon(Icons.open_in_new, size: 18),
-                label: Text(l10n.deliveryTransaction),
               ),
           ],
         ),
